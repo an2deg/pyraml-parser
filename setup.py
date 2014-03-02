@@ -13,7 +13,6 @@ setup(
     install_requires=[
         'setuptools',
         'PyYAML>=3.10',
-        'lxml>=3.3.0',
         'importhelpers>=0.2'
     ],
     classifiers=[
