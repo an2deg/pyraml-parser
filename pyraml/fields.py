@@ -2,14 +2,13 @@ __author__ = 'ad'
 
 from abc import ABCMeta
 import importhelpers
-import importlib
 from collections import OrderedDict
 
 
 class BaseField(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, required=True):
+    def __init__(self, required=False):
         super(BaseField, self).__init__()
         self.required = required
 
@@ -66,9 +65,75 @@ class String(BaseField):
         :type value: basestring
         :return: None
         """
-        value = super(String, self).to_python(value)
-        if value is not None:
-            self.validate(value)
+        self.validate(value)
+
+        return value
+
+
+class Bool(BaseField):
+    """
+    Class represent JSON bool type
+
+     >>> some_field = Bool()
+
+     >>> some_field.to_python(True) == True
+
+    """
+
+    def __init__(self, **kwargs):
+        super(Bool, self).__init__(**kwargs)
+
+    def validate(self, value):
+        super(Bool, self).validate(value)
+
+        if value is None:
+            return
+
+        if not isinstance(value, bool):
+            raise ValueError("{!r} expected to be bool".format(value))
+
+    def to_python(self, value):
+        """
+
+        :param value: a string to process
+        :type value: basestring
+        :return: None
+        """
+        self.validate(value)
+
+        return value
+
+
+class Int(BaseField):
+    """
+    Class represent JSON integer type
+
+     >>> some_field = Int()
+
+     >>> some_field.to_python(1) == 1
+
+    """
+
+    def __init__(self, **kwargs):
+        super(Int, self).__init__(**kwargs)
+
+    def validate(self, value):
+        super(Int, self).validate(value)
+
+        if value is None:
+            return
+
+        if not isinstance(value, (int, long)):
+            raise ValueError("{!r} expected to be integer".format(value))
+
+    def to_python(self, value):
+        """
+
+        :param value: a string to process
+        :type value: basestring
+        :return: None
+        """
+        self.validate(value)
 
         return value
 
@@ -123,11 +188,10 @@ class List(BaseField):
                 value_len, self._max_len))
 
     def to_python(self, value):
-        value = super(List, self).to_python(value)
-        self.validate(value)
-
         if value is not None:
             value = [self._element_type.to_python(element) for element in value]
+
+        self.validate(value)
 
         return value
 
@@ -192,13 +256,13 @@ class Map(BaseField):
                     _value.update(
                         OrderedDict([
                             (self._key_type.to_python(key), self._value_type.to_python(val))
-                                for key, val in item.items()])
+                            for key, val in item.items()])
                     )
                 value = _value
             else:
                 value = OrderedDict([
                     (self._key_type.to_python(key), self._value_type.to_python(val))
-                        for key, val in value.items()])
+                    for key, val in value.items()])
 
         self.validate(value)
 
@@ -226,13 +290,19 @@ class Reference(BaseField):
 
     def __init__(self, ref_class, **kwargs):
         super(Reference, self).__init__(**kwargs)
-        if isinstance(ref_class, basestring):
-            # we got string like "pyraml.entities.RamlTrait" for lazy resolving
-            ref_class = importhelpers.dotted(ref_class)
+        #if isinstance(ref_class, basestring):
+        #    # we got string like "pyraml.entities.RamlTrait" for lazy resolving
+        #    ref_class = importhelpers.dotted(ref_class)
 
         self.ref_class = ref_class
 
+    def _lazy_import(self):
+        if isinstance(self.ref_class, basestring):
+            # we got string like "pyraml.entities.RamlTrait" for lazy resolving
+            self.ref_class = importhelpers.dotted(self.ref_class)
+
     def validate(self, value):
+        self._lazy_import()
         super(Reference, self).validate(value)
 
         if value is None:
@@ -242,10 +312,16 @@ class Reference(BaseField):
             raise ValueError("{!r} expected to be {}".format(value, self.ref_class))
 
     def to_python(self, value):
-        if not isinstance(value, dict):
+        self._lazy_import()
+        if isinstance(value, self.ref_class):
+            # Already initialized by ref_class
+            pass
+        elif isinstance(value, dict):
+            value = self.ref_class(**value)
+        elif value is None:
+            value = self.ref_class()
+        else:
             raise ValueError("{!r} expected to be dict".format(value))
-
-        value = self.ref_class(**value)
         self.validate(value)
 
         if value is not None:

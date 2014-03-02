@@ -20,9 +20,9 @@ class Schema(type):
         # Initialize special `_structure` class attribute which contains info about all model fields
         _structure = {_name: _type for _name, _type in attrs.items() if isinstance(_type, BaseField)}
 
-        # Move fields into `_structure` class attribute
-        for field_name in _structure:
-            del attrs[field_name]
+        ## Move fields into `_structure` class attribute
+        #for field_name in _structure:
+        #    del attrs[field_name]
 
         # Merge structures of parent classes into the structure of new model class
         for base in bases:

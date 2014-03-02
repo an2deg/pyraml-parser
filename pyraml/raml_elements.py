@@ -20,18 +20,3 @@ class ParserRamlInclude(yaml.YAMLObject):
 
     def __repr__(self):
         return "{}({})".format(self.__class__.__name__, self.file_name)
-
-
-class ParserRamlNotNull(yaml.YAMLObject):
-    yaml_tag = u'!!null'
-
-    @staticmethod
-    def loader(loader, node):
-        return ParserRamlNotNull()
-
-    @staticmethod
-    def representer(dumper, data):
-        return dumper.represent_scalar(ParserRamlNotNull.yaml_tag)
-
-    def __repr__(self):
-        return "{}".format(self.__class__.__name__)

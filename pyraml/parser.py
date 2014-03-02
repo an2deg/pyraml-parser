@@ -3,16 +3,17 @@ __author__ = 'ad'
 import contextlib
 import urllib2
 import mimetypes
-import json
 import os.path
-import lxml
 import urlparse
 import yaml
+from collections import OrderedDict
 
-from raml_elements import ParserRamlInclude, ParserRamlNotNull
-from entities import RamlRoot, RamlDocumentation, RamlResource, RamlTrait
-from constants import RAML_SUPPORTED_FORMAT_VERSION, RAML_VALID_PROTOCOLS, RAML_CONTENT_MIME_TYPES
+from raml_elements import ParserRamlInclude
+from fields import String
+from entities import RamlRoot, RamlResource, RamlMethod, RamlBody
+from constants import RAML_SUPPORTED_FORMAT_VERSION
 import bootstrap
+
 
 class RamlException(StandardError):
     pass
@@ -32,95 +33,37 @@ class ParseContext(object):
         self.relative_path = relative_path
 
     def get(self, property_name):
-        return self.data.get(property_name)
+        """
 
-    def iter(self):
+        :param property_name:
+        :return:
+        """
+
+        # Handle special case with null object
+        if self.data is None:
+            return None
+
+        property_value = self.data.get(property_name)
+        if isinstance(property_value, ParserRamlInclude):
+            _property_value, file_type = self._load_include(property_value.file_name)
+            if _is_mime_type_raml(file_type):
+                relative_path = _calculate_new_relative_path(self.relative_path, property_value.file_name)
+                property_value = ParseContext(yaml.load(_property_value), relative_path)
+            else:
+                property_value = _property_value
+        return property_value
+
+    def __iter__(self):
         return iter(self.data)
 
     def get_string_property(self, property_name, required=False):
-        property_value = self.get(property_name)
-        if not property_value:
-            if required:
-                raise RamlParseException("Property `{}` is required".format(property_name))
-
-            return None
-
-        if isinstance(property_value, ParserRamlInclude):
-            property_value, _ = self._load_include(property_value.file_name)
-
-         # version should be string but if version specified as "0.1" yaml package recognized
-        # it as float, so we should handle this situation
-        if isinstance(property_value, (int, float)):
-            property_value = unicode(property_value)
-
-        if not isinstance(property_value, basestring):
-            raise RamlParseException("Property `{}` must be string".format(property_name))
+        property_value = self.get_property_with_schema(property_name, String(required=required))
 
         return property_value
 
-    def get_list_property(self, property_name, target_field):
-        """
-        Parse and extract list property
-
-        :param property_name: property name to extract
-        :type property_name: str
-
-        :param target_field: entity class
-        :type target_field: pyraml.fields.BaseField
-
-        :return: list of target_class  or None
-        :rtype: list
-        """
+    def get_property_with_schema(self, property_name, property_schema):
         property_value = self.get(property_name)
-        if not property_value:
-            return None
-
-        # documentation: !include include/include-documentation.yaml
-        if isinstance(property_value, ParserRamlInclude):
-            property_value = list(self._load_raml_include(property_value.file_name).iter())
-
-        if not isinstance(property_value, list):
-            raise RamlParseException("Property `{}` must be list of objects".format(property_name))
-
-        return target_field.to_python(property_value)
-
-    def get_map_property(self, property_name, target_class):
-        """
-        Parse and extract list property
-
-        :param property_name: property name to extract
-        :type property_name: str
-
-        :param target_class: entity class
-        :type target_class: class
-
-        :return: list of target_class  or None
-        :rtype: list
-        """
-        property_value = self.get(property_name)
-        if not property_value:
-            return None
-
-        # documentation: !include include/include-documentation.yaml
-        if isinstance(property_value, ParserRamlInclude):
-            property_value = list(self._load_raml_include(property_value.file_name).iter())
-
-        if not isinstance(property_value, list):
-            raise RamlParseException("Property `{}` must be list of objects".format(property_name))
-
-        res = []
-        for row in property_value:
-            if not isinstance(row, dict):
-                raise RamlParseException("Property `{}` must be list of objects".format(property_name))
-            row_context = ParseContext(row, self.relative_path)
-
-            doc = target_class()
-            for field_name in row:
-                setattr(doc, field_name, row_context.get_string_property(field_name))
-
-            res.append(doc)
-
-        return res
+        return property_schema.to_python(property_value)
 
     def _load_include(self, file_name):
         """
@@ -138,15 +81,6 @@ class ParseContext(object):
         else:
             url = urlparse.urljoin(self.relative_path, file_name)
             return _load_network_resource(url)
-
-    def _load_raml_include(self, file_name):
-        c, file_type = self._load_include(file_name)
-        if not _is_mime_type_raml(file_type):
-            raise RamlParseException("Include in property `documentation` expected to be RAML or YAML")
-
-        # recalculate relative_path
-        relative_path = _calculate_new_relative_path(self.relative_path, file_name)
-        return ParseContext(yaml.load(c), relative_path)
 
 
 def load(uri):
@@ -167,6 +101,7 @@ def load(uri):
         c, _ = _load_local_file(uri)
 
     return parse(c, relative_path)
+
 
 def parse(c, relative_path):
     """
@@ -189,18 +124,124 @@ def parse(c, relative_path):
     root.baseUri = context.get_string_property('baseUri')
     root.version = context.get_string_property('version')
     root.mediaType = context.get_string_property('mediaType')
-    #root.protocols = _parse_raml_protocols(context)
 
-    root.documentation = context.get_list_property('documentation',  RamlRoot._structure['documentation'])
-    root.traits = context.get_list_property('traits', RamlRoot._structure['traits'])
-    #root.resourceTypes = context.get_list_property('resourceTypes', RamlResource)
-    #root.schemas = context.get_list_property('schemas')
+    root.documentation = context.get_property_with_schema('documentation', RamlRoot.documentation)
+    root.traits = context.get_property_with_schema('traits', RamlRoot.traits)
+
+    resources = OrderedDict()
+    for property_name in context.__iter__():
+        if property_name.startswith("/"):
+            resources[property_name] = parse_resource(context, property_name, root)
+
+    if resources > 0:
+        root.resources = resources
 
     return root
 
 
-def parse_non_root(c, relative_path):
-    raw_content = yaml.load(c)
+def parse_resource(c, property_name, parent_object):
+    """
+    Parse and extract resource with name
+
+    :param c:
+    :type c: ParseContext
+
+    :param parent_object: RamlRoot object or RamlResource object
+    :type parent_object: RamlRoot or RamlResource
+
+    :param property_name: resource name to extract
+    :type property_name: str
+
+    :return: RamlResource  or None
+    :rtype: RamlResource
+    """
+    property_value = c.get(property_name)
+    if not property_value:
+        return None
+
+    resource = RamlResource(uri=property_name)
+    new_context = ParseContext(property_value, c.relative_path)
+    resource.displayName = new_context.get_string_property("displayName")
+    if isinstance(parent_object, RamlResource):
+        resource.parentResource = parent_object
+
+    # Parse methods
+    methods = OrderedDict()
+    for _http_method in ["get", "post", "put", "delete", "head"]:
+        _method = new_context.get(_http_method)
+        if _method:
+            _method = parse_method(ParseContext(_method, c.relative_path), resource)
+            methods[_http_method] = _method
+        elif _http_method in new_context.data:
+            # workaround: if _http_method is already in new_context.data than
+            # it's marked as !!null
+            _method = RamlMethod(notNull=True)
+            methods[_http_method] = _method
+
+    if len(methods):
+        resource.methods = methods
+
+    # Parse resources
+    resources = OrderedDict()
+    for property_name in new_context.__iter__():
+        if property_name.startswith("/"):
+            resources[property_name] = parse_resource(new_context, property_name, resource)
+
+    if resources > 0:
+        resource.resources = resources
+
+    return resource
+
+
+def parse_method(c, parent_object):
+    """
+    Parse RAML method
+
+    :param c: ParseContext object which contains RamlMethod
+    :type c: ParseContext
+
+    :param parent_object: RamlRoot object or RamlResource object
+    :type parent_object: RamlRoot or RamlResource
+
+    :return: RamlMethod  or None
+    :rtype: RamlMethod
+    """
+
+    method = RamlMethod()
+    method.responses = c.get_property_with_schema("responses", RamlMethod.responses)
+    method.description = c.get_string_property("description")
+    method.body = parse_body(ParseContext(c.get("body"), c.relative_path), method)
+    return method
+
+
+def parse_body(c, parent_object):
+    """
+    Parse and extract resource with name
+
+    :param c:ParseContext object which contains RamlBody
+    :type c: ParseContext
+
+    :param parent_object: RamlRoot, RamleResponse or RamlBody object
+    :type parent_object: RamlRoot or RamlBody or RamleResponse
+
+    :return: RamlMethod  or None
+    :rtype: RamlMethod
+    """
+
+    body = RamlBody()
+    body.example = c.get_string_property("example")
+
+    _body = c.get("body")
+    # Parse not null `body` inline property
+    if _body:
+        body.body = parse_body(ParseContext(_body, c.relative_path), body)
+
+    body.schema = c.get_string_property("schema")
+    body.example = c.get_string_property("example")
+    body.formParameters = c.get_property_with_schema("formParameters", RamlBody.formParameters)
+    body.headers = c.get_property_with_schema("headers", RamlBody.headers)
+
+    return body
 
 
 def _validate_raml_header(line):
@@ -257,14 +298,16 @@ def _build_network_relative_path(url):
     p = urlparse.urlparse(url)
     return urlparse.urlunparse(urlparse.ParseResult(p.scheme, p.netloc, os.path.dirname(p.path), '', '', ''))
 
+
 def _calculate_new_relative_path(base, uri):
     if _is_network_resource(base):
         return _build_network_relative_path(urlparse.urljoin(base, uri))
     else:
         return os.path.dirname(os.path.join(base, uri))
 
+
 def _load_local_file(full_path):
-     # include locates at local file system
+    # include locates at local file system
     if not os.path.exists(full_path):
         raise RamlNotFoundException("No such file {} found".format(full_path))
 
@@ -284,6 +327,7 @@ def _load_network_resource(url):
         # of specs it MUST support RAML mime
         mime_type = f.headers.gettype()
         return f.read(), mime_type
+
 
 def _parse_raml_version(content):
     """
@@ -307,27 +351,3 @@ def _parse_raml_version(content):
         res = str(property_value)
 
     return property_value
-
-
-def _parse_raml_protocols(content):
-    """
-    Get optional property `protocols` and make sure than it is list of strings.
-    If not such property exists function returns None
-
-    :return: list of string - property value or None
-    :rtype : list str or None
-    """
-    if not content.get('protocols'):
-        return None
-
-    res = content['protocols']
-
-    # The protocols property MUST be an array of strings, of values "HTTP" and/or "HTTPS".
-    if not isinstance(res, list):
-        raise RamlParseException("Property `protocols` must be array of strings")
-
-    invalid_protocols = set(res).difference(RAML_VALID_PROTOCOLS)
-    if invalid_protocols:
-        raise RamlParseException("Property `protocols` contains invalid value", invalid_protocols)
-
-    return res

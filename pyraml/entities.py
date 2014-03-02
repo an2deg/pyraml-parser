@@ -1,8 +1,7 @@
 __author__ = 'ad'
 
-from cStringIO import StringIO
 from model import Model
-from fields import String, Reference, Map, List, Reference
+from fields import String, Reference, Map, List, Bool, Int
 
 
 class RamlDocumentation(Model):
@@ -23,15 +22,24 @@ class RamlQueryParameter(Model):
     example = String()
 
 
+class RamlHeader(Model):
+    type = String()
+    required = Bool()
+
 class RamlBody(Model):
     schema = String()
     example = String()
+    notNull = Bool()
+    formParameters = Map(String(), Reference(RamlHeader))
+    headers = Map(String(), Reference(RamlHeader))
+    body = Map(String(), Reference("pyraml.entities.RamlBody"))
 
     @classmethod
     def from_json(cls, json_object):
         res = super(RamlBody, cls).from_json(json_object)
 
         return res
+
 
 class RamlTrait(Model):
     """
@@ -50,9 +58,26 @@ class RamlTrait(Model):
     name = String()
     usage = String()
     description = String()
+    displayName = String()
     method = String()
     queryParameters = Map(String(), Reference(RamlQueryParameter))
     body = Reference(RamlBody)
+
+
+class RamlMethod(Model):
+    notNull = Bool()
+    description = String()
+    body = Reference(RamlBody)
+    responses = Map(Int(), Reference(RamlBody))
+
+
+class RamlResource(Model):
+    displayName = String()
+    description = String()
+    uri = String()
+    parentResource = Reference("pyraml.entities.RamlResource")
+    methods = Map(String(), Reference(RamlBody))
+    resources = Map(String(), Reference("pyraml.entities.RamlResource"))
 
 
 class RamlRoot(Model):
@@ -64,64 +89,4 @@ class RamlRoot(Model):
     mediaType = String()
     documentation = List(Reference(RamlDocumentation))
     traits = Map(String(), Reference(RamlTrait))
-
-    #def __init__(self, raml_version):
-    #    self.raml_version = raml_version
-    #    self.title = None
-    #    self.version = None
-    #    self.mediaType = None
-    #    self.protocols = None
-    #    self.baseUri = None
-    #    self.documentation = None
-    #    self.schemas = None
-    #    self.resourceTypes = None
-    #    self.traits = None
-    #    self.securitySchemes = None
-    #    self.resource = None
-    #
-    #def dumps(self):
-    #    res = StringIO()
-    #    res.write("#%RAML {}\n".format(self.raml_version))
-    #    if self.title:
-    #        res.write("title: {}\n".format(self.title))
-    #    if self.version:
-    #        res.write("version: {}\n".format(self.version))
-    #    if self.mediaType:
-    #        res.write("mediaType: {}")
-
-
-class RamlResourceType(object):
-    """
-    resourceTypes:
-      - collection:
-          usage: This resourceType should be used for any collection of items
-          description: The collection of <<resourcePathName>>
-          get:
-            description: Get all <<resourcePathName>>, optionally filtered
-          post:
-            description: Create a new <<resourcePathName | !singularize>>
-    """
-
-    def __init__(self):
-        self.name = None
-        self.usage = None
-        self.description = None
-        self.resourcePath = None
-        self.resourcePathName = None
-        self.mediaTypeExtension = None
-        self.methods = None
-
-
-class RamlResource(object):
-    def __init__(self):
-        self.displayName = None
-        self.description = None
-        self.uri = None
-        self.parentResource = None
-        self.uriParameters = None
-        self.methods = None
-
-
-class RamlMethod(RamlResource):
-    def __init__(self):
-        super(RamlMethod, self).__init__()
+    resources = Map(String(), Reference(RamlResource))
