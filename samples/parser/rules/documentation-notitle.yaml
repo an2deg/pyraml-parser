@@ -1,0 +1,8 @@
+#%RAML 0.8
+---
+title: Leagues API
+version: v1
+baseUri: http://localhost/api
+documentation:
+    - content: |
+        If you need support, please contact asr@mulesoft.com.

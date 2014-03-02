@@ -1,0 +1,8 @@
+#%RAML 0.8
+---
+title: Example API
+version: v1
+resourceTypes: !include resource-type-sequence.yaml
+
+/simple:
+    type: simple

@@ -1,0 +1,20 @@
+#%RAML 0.8
+---
+title: sample API
+version: v1
+baseUri: https://api.sample.com/
+traits:
+    - paged:
+        description: Paged
+        queryParameters:
+            count:
+                type: integer
+                required: false
+/media:
+    is: [paged]
+    post:
+        queryParameters:
+            filter:
+                type: string
+                required: true
+    get: ~

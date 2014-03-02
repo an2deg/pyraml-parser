@@ -1,0 +1,51 @@
+#%RAML 0.8
+---
+title: Example API
+version: v1
+resourceTypes:
+    - simple:
+        get:
+            description: some description
+    - optional:
+        get?:
+            description: get description
+        put?:
+            description: type put description
+            body:
+                text/xml: ~
+        post:
+            description: post description
+            body:
+                text/xml: ~
+    - params:
+        <<method>>:
+            description: <<description>>
+    - inheritance:
+        type: simple
+        post:
+            body:
+                text/yaml: ~
+
+
+/simpleResource:
+    type: simple
+
+/optionalResource:
+    type: optional
+    put:
+        description: resource put description
+        body:
+            application/json: ~
+
+/paramsResource:
+    type:
+        params:
+            method: patch
+            description: homemade description
+
+/paramsResource2:
+    type:
+        params: {method: delete, description: fine description}
+
+/inheritanceResource:
+    type: inheritance

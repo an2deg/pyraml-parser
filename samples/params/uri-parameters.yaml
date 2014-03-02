@@ -1,0 +1,12 @@
+#%RAML 0.8
+title: test uri parameters
+baseUri: http://example.com/api
+
+/nameless-children:
+    /:
+        /:
+/apis:
+    get: ~
+    /{apiId}:
+        /{childId}:
+            get: ~

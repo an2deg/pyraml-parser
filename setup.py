@@ -5,11 +5,17 @@ setup(
     version='0.0.1',
     author='Andrii Degtiarov',
     author_email='andrew.degtiariov@gmail.com',
-    packages=['pyraml-parser'],
+    packages=['pyraml'],
     url='https://github.com/an2deg/pyraml-parser',
     license='MIT',
     description='Python parser for RAML.',
     long_description=open('README').read(),
+    install_requires=[
+        'setuptools',
+        'PyYAML>=3.10',
+        'lxml>=3.3.0',
+        'importhelpers>=0.2'
+    ],
     classifiers=[
         'Development Status :: 1 - Alpha',
         'Environment :: Console',

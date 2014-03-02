@@ -1,0 +1,14 @@
+#%RAML 0.8
+---
+title: Salesforce Chatter Communities REST API
+baseUri: https://{param2}.force.com/param
+baseUriParameters:
+ param2:
+   displayName: Community Domain
+   type: string
+   required: 'y'
+/resource:
+    get:
+        queryParameters:
+            param:
+                type: file

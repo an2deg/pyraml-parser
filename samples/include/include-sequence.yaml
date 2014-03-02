@@ -1,0 +1,17 @@
+#%RAML 0.8
+title: include sequence
+schemas:
+    - !include sequence-schema.yaml
+traits:
+    - !include sequence-trait.yaml
+resourceTypes:
+    - !include sequence-type.yaml
+
+/main:
+    type: putter
+    post:
+        body:
+            application/json:
+                schema: main
+    get:
+        is: [paged, secured]

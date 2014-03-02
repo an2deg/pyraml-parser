@@ -1,0 +1,5 @@
+#%RAML 0.8
+---
+documentation:
+    - title: Home
+      content: !include https://raw.github.com/mulesoft/mule/mule-3.x/README.md
