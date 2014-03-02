@@ -64,6 +64,11 @@ class RamlTrait(Model):
     body = Reference(RamlBody)
 
 
+class RamlResourceType(Model):
+    methods = Map(String(), Reference(RamlBody))
+    type = Reference("pyraml.entities.RamlResourceType")
+    is_ = List(Reference("pyraml.entities.RamlTrait"), field_name="is")
+
 class RamlMethod(Model):
     notNull = Bool()
     description = String()
@@ -75,6 +80,7 @@ class RamlResource(Model):
     displayName = String()
     description = String()
     uri = String()
+    type = Reference(RamlTrait, field_name="is")
     parentResource = Reference("pyraml.entities.RamlResource")
     methods = Map(String(), Reference(RamlBody))
     resources = Map(String(), Reference("pyraml.entities.RamlResource"))

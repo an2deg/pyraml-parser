@@ -8,7 +8,7 @@ from collections import OrderedDict
 class BaseField(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, required=False):
+    def __init__(self, required=False, field_name=None):
         super(BaseField, self).__init__()
         self.required = required
 
