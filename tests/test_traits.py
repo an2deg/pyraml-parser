@@ -2,7 +2,7 @@ __author__ = 'ad'
 
 import os.path
 import pyraml.parser
-from pyraml.entities import RamlRoot, RamlTrait, RamlBody
+from pyraml.entities import RamlRoot, RamlTrait, RamlBody, RamlResourceType
 
 fixtures_dir = os.path.join(os.path.dirname(__file__), '..', 'samples')
 
@@ -34,3 +34,19 @@ def test_parse_raml_with_many_traits():
     assert isinstance(p.traits["knotty"], RamlTrait), p.traits
     assert p.traits["simple"].displayName == "simple trait"
     assert p.traits["knotty"].displayName == "<<value>> trait"
+
+
+def test_parse_resource_type_with_references_to_traits():
+    p = pyraml.parser.load(os.path.join(fixtures_dir, 'media-type.yaml'))
+    assert isinstance(p, RamlRoot), RamlRoot
+    assert p.resourceTypes, "Property `traits` should be set"
+    assert len(p.resourceTypes)
+
+    assert 'typeParent' in p.resourceTypes, p.resourceTypes
+    assert isinstance(p.resourceTypes['typeParent'], RamlResourceType), p.resourceTypes
+    parent_resource_type = p.resourceTypes['typeParent']
+    assert parent_resource_type.methods, p.resourceTypes['typeParent']
+    assert 'get' in parent_resource_type.methods
+
+    assert 'typeChild' in p.resourceTypes, p.resourceTypes
+    assert isinstance(p.resourceTypes['typeChild'], RamlResourceType), p.resourceTypes

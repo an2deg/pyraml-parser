@@ -9,8 +9,8 @@ import yaml
 from collections import OrderedDict
 
 from raml_elements import ParserRamlInclude
-from fields import String
-from entities import RamlRoot, RamlResource, RamlMethod, RamlBody
+from fields import String, Reference
+from entities import RamlRoot, RamlResource, RamlMethod, RamlBody, RamlResourceType, RamlTrait
 from constants import RAML_SUPPORTED_FORMAT_VERSION
 import bootstrap
 
@@ -34,9 +34,13 @@ class ParseContext(object):
 
     def get(self, property_name):
         """
+        Extract property with name `property_name` from context
 
-        :param property_name:
-        :return:
+        :param property_name: property name to extract
+        :type property_name: str
+
+        :return: object
+        :rtype: object or None
         """
 
         # Handle special case with null object
@@ -127,6 +131,7 @@ def parse(c, relative_path):
 
     root.documentation = context.get_property_with_schema('documentation', RamlRoot.documentation)
     root.traits = context.get_property_with_schema('traits', RamlRoot.traits)
+    root.resourceTypes = parse_resource_type(context)
 
     resources = OrderedDict()
     for property_name in context.__iter__():
@@ -192,6 +197,52 @@ def parse_resource(c, property_name, parent_object):
 
     return resource
 
+def parse_resource_type(c):
+    """
+    Parse and extract resourceType
+
+    :param c: ParseContext object
+    :type c: ParseContext
+
+    :return: RamlResource  or None
+    :rtype: RamlResource
+    """
+
+    json_resource_types = c.get('resourceTypes')
+    if not json_resource_types:
+        return None
+
+    # We got list of dict from c.get('resourceTypes') so we need to convert it to dict
+    resource_types_context =  ParseContext(json_resource_types[0], c.relative_path)
+
+    resource_types = {}
+
+    for rtype_name in resource_types_context:
+        new_c = ParseContext(resource_types_context.get(rtype_name), resource_types_context.relative_path)
+
+        rtype_obj = RamlResourceType()
+        rtype_obj.type = new_c.get_string_property("type")
+        rtype_obj.is_ = new_c.get_property_with_schema("is", RamlResourceType.is_)
+
+        # Parse methods
+        methods = OrderedDict()
+        for _http_method in ["get", "post", "put", "delete", "head"]:
+            _method = new_c.get(_http_method)
+            if _method:
+                _method = ParseContext(_method, new_c.relative_path).get_property_with_schema('traits', Reference(RamlTrait))
+                methods[_http_method] = _method
+            elif _http_method in new_c.data:
+                # workaround: if _http_method is already in new_context.data than
+                # it's marked as !!null
+                _method = RamlMethod(notNull=True)
+                methods[_http_method] = _method
+
+        if len(methods):
+            rtype_obj.methods = methods
+
+        resource_types[rtype_name] = rtype_obj
+
+    return resource_types
 
 def parse_method(c, parent_object):
     """
@@ -200,8 +251,8 @@ def parse_method(c, parent_object):
     :param c: ParseContext object which contains RamlMethod
     :type c: ParseContext
 
-    :param parent_object: RamlRoot object or RamlResource object
-    :type parent_object: RamlRoot or RamlResource
+    :param parent_object: RamlRoot, RamlResource or RamlResourceType object
+    :type parent_object: RamlRoot or RamlResource or RamlResourceType
 
     :return: RamlMethod  or None
     :rtype: RamlMethod

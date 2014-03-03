@@ -17,12 +17,8 @@ class BaseModel(object):
 
 class Schema(type):
     def __new__(mcs, name, bases, attrs):
-        # Initialize special `_structure` class attribute which contains info about all model fields
+        # Initialize special `_structure` class attribute which contains info about all model fields'
         _structure = {_name: _type for _name, _type in attrs.items() if isinstance(_type, BaseField)}
-
-        ## Move fields into `_structure` class attribute
-        #for field_name in _structure:
-        #    del attrs[field_name]
 
         # Merge structures of parent classes into the structure of new model class
         for base in bases:
@@ -96,13 +92,25 @@ class Model(BaseModel):
         """
         rv = cls()
         errors = {}
-        for field_name, field_type in cls._structure.items():
+
+        for model_field_name, field_type in cls._structure.items():
             # Validate and process a field of JSON object
             try:
-                value = field_type.to_python(json_object.get(field_name, None))
-                setattr(rv, field_name, value)
+                value = field_type.to_python(json_object.get(model_field_name, None))
+                setattr(rv, model_field_name, value)
             except ValueError as e:
-                errors[field_name] = unicode(e)
+                errors[model_field_name] = unicode(e)
+
+        # Look for aliased attributes
+        for field_name, field_value in json_object.items():
+            if not field_name in cls._structure:
+                for model_field_name, field_type in cls._structure.items():
+                    if field_type.field_name == field_name:
+                        try:
+                            value = field_type.to_python(field_value)
+                            setattr(rv, model_field_name, value)
+                        except ValueError as e:
+                            errors[model_field_name] = unicode(e)
         if errors:
             raise ValidationError(errors)
 

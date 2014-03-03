@@ -33,13 +33,15 @@ class RamlBody(Model):
     formParameters = Map(String(), Reference(RamlHeader))
     headers = Map(String(), Reference(RamlHeader))
     body = Map(String(), Reference("pyraml.entities.RamlBody"))
+    is_ = List(String(), field_name="is")
 
-    @classmethod
-    def from_json(cls, json_object):
-        res = super(RamlBody, cls).from_json(json_object)
-
-        return res
-
+class RamlResponse(Model):
+    schema = String()
+    example = String()
+    notNull = Bool()
+    description = String()
+    headers = Map(String(), Reference(RamlHeader))
+    body = Reference("pyraml.entities.RamlBody")
 
 class RamlTrait(Model):
     """
@@ -59,15 +61,18 @@ class RamlTrait(Model):
     usage = String()
     description = String()
     displayName = String()
+    responses = Map(Int(), Reference(RamlResponse))
     method = String()
     queryParameters = Map(String(), Reference(RamlQueryParameter))
     body = Reference(RamlBody)
+    # Reference to another RamlTrait
+    is_ = List(String(), field_name="is")
 
 
 class RamlResourceType(Model):
-    methods = Map(String(), Reference(RamlBody))
-    type = Reference("pyraml.entities.RamlResourceType")
-    is_ = List(Reference("pyraml.entities.RamlTrait"), field_name="is")
+    methods = Map(String(), Reference(RamlTrait))
+    type = String()
+    is_ = List(String(), field_name="is")
 
 class RamlMethod(Model):
     notNull = Bool()
@@ -96,3 +101,4 @@ class RamlRoot(Model):
     documentation = List(Reference(RamlDocumentation))
     traits = Map(String(), Reference(RamlTrait))
     resources = Map(String(), Reference(RamlResource))
+    resourceTypes =  Map(String(), Reference(RamlResourceType))

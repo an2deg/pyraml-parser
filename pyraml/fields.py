@@ -11,6 +11,7 @@ class BaseField(object):
     def __init__(self, required=False, field_name=None):
         super(BaseField, self).__init__()
         self.required = required
+        self.field_name = field_name
 
     def validate(self, value):
         if value is None and self.required:
@@ -60,10 +61,14 @@ class String(BaseField):
 
     def to_python(self, value):
         """
+        Convert value to python representation
 
         :param value: a string to process
         :type value: basestring
-        :return: None
+
+        :return: string
+        :rtype: basestring
+
         """
         self.validate(value)
 
@@ -84,6 +89,13 @@ class Bool(BaseField):
         super(Bool, self).__init__(**kwargs)
 
     def validate(self, value):
+        """
+        Validate value to match rules
+
+        :param value: value to validate
+        :type value: bool
+        :return: None
+        """
         super(Bool, self).validate(value)
 
         if value is None:
@@ -94,9 +106,10 @@ class Bool(BaseField):
 
     def to_python(self, value):
         """
+        Convert value to python representation
 
         :param value: a string to process
-        :type value: basestring
+        :type value: bool
         :return: None
         """
         self.validate(value)
@@ -109,7 +122,6 @@ class Int(BaseField):
     Class represent JSON integer type
 
      >>> some_field = Int()
-
      >>> some_field.to_python(1) == 1
 
     """
@@ -118,6 +130,13 @@ class Int(BaseField):
         super(Int, self).__init__(**kwargs)
 
     def validate(self, value):
+        """
+        Validate value to match rules
+
+        :param value: value to validate
+        :type value: int or long
+        :return: None
+        """
         super(Int, self).validate(value)
 
         if value is None:
@@ -128,10 +147,13 @@ class Int(BaseField):
 
     def to_python(self, value):
         """
+        Convert value to python representation
 
         :param value: a string to process
-        :type value: basestring
-        :return: None
+        :type value: int or long
+
+        :return: int or long
+        :rtype: int or long
         """
         self.validate(value)
 
@@ -170,6 +192,14 @@ class List(BaseField):
         self._element_type = element_type
 
     def validate(self, value):
+        """
+        Validate value to match rules
+
+        :param value: value to validate
+        :type value: list
+        :return: None
+        """
+
         super(List, self).validate(value)
 
         if value is None:
@@ -188,6 +218,15 @@ class List(BaseField):
                 value_len, self._max_len))
 
     def to_python(self, value):
+        """
+        Convert value to python representation
+
+        :param value: a list to process
+        :type value: list
+
+        :return: list
+        :rtype: list
+        """
         if value is not None:
             value = [self._element_type.to_python(element) for element in value]
 
@@ -232,6 +271,13 @@ class Map(BaseField):
         self._key_type = key_type
 
     def validate(self, value):
+        """
+        Validate value to match rules
+
+        :param value: value to validate
+        :type value: dict
+        :return: None
+        """
         super(Map, self).validate(value)
 
         if value is None:
@@ -245,6 +291,13 @@ class Map(BaseField):
             self._value_type.validate(val)
 
     def to_python(self, value):
+        """
+        Validate value to match rules
+
+        :param value: value to validate
+        :type value: list
+        :return: None
+        """
         if value is not None:
             # At this point we could get list of dict or dict
             if isinstance(value, list):
@@ -289,19 +342,36 @@ class Reference(BaseField):
     """
 
     def __init__(self, ref_class, **kwargs):
-        super(Reference, self).__init__(**kwargs)
-        #if isinstance(ref_class, basestring):
-        #    # we got string like "pyraml.entities.RamlTrait" for lazy resolving
-        #    ref_class = importhelpers.dotted(ref_class)
+        """
+        Constructor for Reference
 
+        :param ref_class: model class to reference to
+        :type ref_class: class of pyraml.model.Model
+
+        :param kwargs: additional attributes for BaseField constructor
+        :type kwargs: dict
+        """
+        super(Reference, self).__init__(**kwargs)
         self.ref_class = ref_class
 
     def _lazy_import(self):
+        """
+        If self.ref_class is string like "pyraml.entities.RamlTrait" just import the class
+        and assign it to self.ref_class
+
+        :return: None
+        """
         if isinstance(self.ref_class, basestring):
-            # we got string like "pyraml.entities.RamlTrait" for lazy resolving
             self.ref_class = importhelpers.dotted(self.ref_class)
 
     def validate(self, value):
+        """
+        Validate value to match rules
+
+        :param value: value to validate
+        :type value: pyraml.model.Model
+        :return: None
+        """
         self._lazy_import()
         super(Reference, self).validate(value)
 
@@ -312,17 +382,28 @@ class Reference(BaseField):
             raise ValueError("{!r} expected to be {}".format(value, self.ref_class))
 
     def to_python(self, value):
+        """
+        Convert value to python representation
+
+        :param value: a model to process
+        :type value: pyraml.model.Model or dict
+
+        :return: int or long
+        :rtype: int or long
+        """
         self._lazy_import()
+
         if isinstance(value, self.ref_class):
-            # Already initialized by ref_class
+            # Value is already instance of ref_class, don't need to convert it
             pass
         elif isinstance(value, dict):
-            value = self.ref_class(**value)
+            # Value is JSON object, convert it to `ref_class`
+            value = self.ref_class.from_json(value)
         elif value is None:
+            # Value empty, just instantiate empty `ref_class`
             value = self.ref_class()
         else:
             raise ValueError("{!r} expected to be dict".format(value))
         self.validate(value)
 
-        if value is not None:
-            return value
+        return value
