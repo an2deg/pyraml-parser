@@ -20,6 +20,7 @@ def test_resource_nested():
     assert isinstance(root_resource, RamlResource), p.resources
     assert root_resource.parentResource is None, p.resources
     assert root_resource.methods is not None, p.resources
+    assert root_resource.description == "Media Description", root_resource
     assert "get" in root_resource.methods, p.resources
     assert isinstance(root_resource.methods["get"], RamlMethod), p.resources
     assert root_resource.methods["get"].notNull, p.resources
@@ -29,11 +30,13 @@ def test_resource_nested():
 
     assert "/search" in root_resource.resources is not None, root_resource
     assert root_resource.resources["/search"].displayName == "Media Search", root_resource
+    assert root_resource.resources["/search"].description == "Media Search Description", root_resource
     assert "get" in root_resource.resources["/search"].methods, root_resource
     assert root_resource.resources["/search"].methods["get"].notNull, root_resource
 
     assert "/tags" in root_resource.resources is not None, root_resource
     assert root_resource.resources["/tags"].displayName == "Tags", root_resource
+    assert root_resource.resources["/tags"].description == "Tags Description", root_resource
     assert "get" in root_resource.resources["/tags"].methods, root_resource
     assert root_resource.resources["/tags"].methods["get"].notNull, root_resource
 
@@ -42,6 +45,7 @@ def test_resource_nested():
     assert tag_resource.resources is not None, tag_resource
     assert "/search" in tag_resource.resources, tag_resource
     assert tag_resource.resources["/search"].displayName == "Tag Search", tag_resource
+    assert tag_resource.resources["/search"].description == "Tag Search Description", tag_resource
     assert tag_resource.resources["/search"].methods["get"].notNull, root_resource
 
     # Ensure than every sub-resource have correct parentResource
@@ -58,6 +62,7 @@ def test_resource_with_responses():
 
     leagues_resource = p.resources["/leagues"]
     assert leagues_resource.displayName == "Leagues", leagues_resource
+    assert leagues_resource.description is None, leagues_resource
     assert leagues_resource.methods, leagues_resource
     assert leagues_resource.methods["get"], leagues_resource
 
