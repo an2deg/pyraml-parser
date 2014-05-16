@@ -9,7 +9,7 @@ setup(
     url='https://github.com/an2deg/pyraml-parser',
     license='MIT',
     description='Python parser for RAML.',
-    long_description=open('README').read(),
+    long_description=open('README.md').read(),
     install_requires=[
         'setuptools',
         'PyYAML>=3.10',
