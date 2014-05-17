@@ -166,6 +166,7 @@ def parse_resource(c, property_name, parent_object):
 
     resource = RamlResource(uri=property_name)
     new_context = ParseContext(property_value, c.relative_path)
+    resource.description = new_context.get_string_property("description")
     resource.displayName = new_context.get_string_property("displayName")
     if isinstance(parent_object, RamlResource):
         resource.parentResource = parent_object
