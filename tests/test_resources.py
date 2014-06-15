@@ -3,7 +3,7 @@ __author__ = 'ad'
 import os.path
 import pyraml.parser
 from collections import OrderedDict
-from pyraml.entities import RamlResource, RamlMethod
+from pyraml.entities import RamlResource, RamlMethod, RamlQueryParameter
 
 fixtures_dir = os.path.join(os.path.dirname(__file__), '..', 'samples')
 
@@ -73,3 +73,36 @@ def test_resource_with_responses():
 
     assert "application/json" in leagues_resource_get.responses[200].body, leagues_resource_get
     assert "text/xml" in leagues_resource_get.responses[200].body, leagues_resource_get
+
+
+def test_resource_with_params():
+    p = pyraml.parser.load(os.path.join(fixtures_dir, 'params', 'param-types.yaml'))
+    assert isinstance(p.resources, OrderedDict), p.resources
+
+    assert "/simple" in p.resources, p
+    simple_res = p.resources["/simple"]
+    assert "get" in simple_res.methods, simple_res
+
+    queryParameters = simple_res.methods["get"].queryParameters
+
+    assert "name" in queryParameters, queryParameters
+    assert "age" in queryParameters, queryParameters
+    assert "price" in queryParameters, queryParameters
+    assert "time" in queryParameters, queryParameters
+    assert "alive" in queryParameters, queryParameters
+    assert "default-enum" in queryParameters, queryParameters
+
+    queryParam1 = queryParameters["name"]
+    assert isinstance(queryParam1, RamlQueryParameter), queryParam1
+    assert queryParam1.example == "two", queryParam1
+    assert queryParam1.enum == ["one", "two", "three"], queryParam1
+    assert queryParam1.displayName == "name name", queryParam1
+    assert queryParam1.description == "name description"
+    assert queryParam1.default == "three", queryParam1
+    assert queryParam1.minLength == 3, queryParam1
+    assert queryParam1.type_ == "string", queryParam1
+    assert queryParam1.maxLength == 5, queryParam1
+    assert queryParam1.pattern == '[a-z]{3,5}', queryParam1
+    assert queryParam1.required == False, queryParam1
+    assert queryParam1.repeat == False, queryParam1
+

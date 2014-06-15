@@ -1,7 +1,7 @@
 __author__ = 'ad'
 
 from model import Model
-from fields import String, Reference, Map, List, Bool, Int
+from fields import String, Reference, Map, List, Bool, Int, Float, Or
 
 
 class RamlDocumentation(Model):
@@ -19,7 +19,18 @@ class RamlSchema(Model):
 class RamlQueryParameter(Model):
     name = String()
     description = String()
-    example = String()
+    example = Or(String(),Int(),Float())
+    displayName = String()
+    type_ = String(field_name="type")
+    enum = List(Or(String(),Float(),Int()))
+    pattern = String()
+    minLength = Int()
+    maxLength = Int()
+    repeat = Bool()
+    required = Bool()
+    default = Or(String(),Int(),Float())
+    minimum = Or(Int(),Float())
+    maximum = Or(Int(),Float())
 
 
 class RamlHeader(Model):
@@ -79,6 +90,7 @@ class RamlMethod(Model):
     description = String()
     body = Reference(RamlBody)
     responses = Map(Int(), Reference(RamlBody))
+    queryParameters = Map(String(), Reference(RamlQueryParameter))
 
 
 class RamlResource(Model):

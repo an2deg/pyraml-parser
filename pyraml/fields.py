@@ -14,6 +14,13 @@ class BaseField(object):
         self.field_name = field_name
 
     def validate(self, value):
+        """
+        Validate `value`
+
+        :raise ValueError: in case of validation errors
+
+        """
+
         if value is None and self.required:
             raise ValueError("missed value for required field")
 
@@ -36,12 +43,22 @@ class String(BaseField):
     Class represent JSON string type
 
      >>> some_field = String(max_len=1000)
-
      >>> some_field.to_python("Some thing") == "Some thing"
+
 
     """
 
     def __init__(self, max_len=None, **kwargs):
+        """
+        Constructor
+
+        :param max_len: Restrict maximum length of the field
+        :type max_len: int
+        :param force_conversion: Set to true in order to ignore real type of a value and convert it into unicode.
+         We have to have this parameter b/c YAML format doesn't not have schema and string '17.30' is always
+         translated to float 17.30
+        :type force_conversion: bool
+        """
         super(String, self).__init__(**kwargs)
         self._max_len = max_len
 
@@ -52,7 +69,8 @@ class String(BaseField):
             return
 
         if not isinstance(value, basestring):
-            raise ValueError("{!r} expected to be string".format(value))
+            raise ValueError("{!r} expected to be string but got {}".format(value, type(value).__name__))
+
         if self._max_len is not None:
             value_len = len(value)
             if value_len > self._max_len:
@@ -154,6 +172,49 @@ class Int(BaseField):
 
         :return: int or long
         :rtype: int or long
+        """
+        self.validate(value)
+
+        return value
+
+
+class Float(BaseField):
+    """
+    Class represent JSON integer type
+
+     >>> some_field = Float()
+     >>> some_field.to_python(1.0) == 1.0
+
+    """
+
+    def __init__(self, **kwargs):
+        super(Float, self).__init__(**kwargs)
+
+    def validate(self, value):
+        """
+        Validate value to match rules
+
+        :param value: value to validate
+        :type value: float
+        :return: None
+        """
+        super(Float, self).validate(value)
+
+        if value is None:
+            return
+
+        if not isinstance(value, float):
+            raise ValueError("{!r} expected to be integer but got {}".format(value, type(value).__name__))
+
+    def to_python(self, value):
+        """
+        Convert value to python representation
+
+        :param value: a string to process
+        :type value: float
+
+        :return: float
+        :rtype: float
         """
         self.validate(value)
 
@@ -407,3 +468,83 @@ class Reference(BaseField):
         self.validate(value)
 
         return value
+
+
+class Or(BaseField):
+    """
+    Class represent reference to another model
+
+     >>> some_field = Or(String(),Float())
+     >>> some_field.to_python("1") == "1"
+     >>> some_field.to_python(2.1) == 2.1
+     >>> some_field.to_python(False)
+     Traceback (most recent call last):
+     ...
+     ValueError: u'False' expected to be one of: String, Float
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor for Reference
+
+        :param args: list of fields
+        :type args: list of BaseField
+
+        :param kwargs: additional attributes for BaseField constructor
+        :type kwargs: dict
+        """
+        super(Or, self).__init__(**kwargs)
+        self.variants = []
+        for field in args:
+            if not isinstance(field, BaseField):
+                raise ValueError("Invalid argument supplied {!r}: expected list of BaseField instances".format(field))
+            self.variants.append(field)
+
+        if len(self.variants) < 2:
+            raise ValueError("Required at least 2 variants but got only {}".format(len(self.variants)))
+
+    def validate(self, value):
+        """
+        Validate value to match rules
+
+        :param value: value to validate
+        :return: None
+        :raise ValueError: in case of validation errors
+        """
+        super(Or, self).validate(value)
+
+        if value is None:
+            return
+
+        for field in self.variants:
+            try:
+                field.validate(value)
+                break
+            except ValueError:
+                pass
+        else:
+            # No one of variants doesn't accept `value`
+            raise ValueError("{!r} expected to be one of: {}".format(value,
+                                                                     ",".join(
+                                                                         [type(f).__name__ for f in self.variants])))
+
+        def to_python(self, value):
+            """
+            Convert value to python representation
+
+            :param value: a field to process
+            :type value: any
+
+            :return: first of accepted variant
+            """
+
+            for field in self.variants:
+                try:
+                    field.validate(value)
+                    return field.to_python(value)
+                except ValueError:
+                    pass
+            else:
+                # Raise ValueError
+                self.validate(value)

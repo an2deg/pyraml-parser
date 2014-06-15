@@ -10,7 +10,7 @@ from collections import OrderedDict
 
 from raml_elements import ParserRamlInclude
 from fields import String, Reference
-from entities import RamlRoot, RamlResource, RamlMethod, RamlBody, RamlResourceType, RamlTrait
+from entities import RamlRoot, RamlResource, RamlMethod, RamlBody, RamlResourceType, RamlTrait, RamlQueryParameter
 from constants import RAML_SUPPORTED_FORMAT_VERSION
 import bootstrap
 
@@ -263,6 +263,8 @@ def parse_method(c, parent_object):
     method.responses = c.get_property_with_schema("responses", RamlMethod.responses)
     method.description = c.get_string_property("description")
     method.body = parse_body(ParseContext(c.get("body"), c.relative_path), method)
+    method.queryParameters = c.get_property_with_schema("queryParameters", RamlMethod.queryParameters)
+
     return method
 
 

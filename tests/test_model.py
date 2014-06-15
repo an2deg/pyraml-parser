@@ -3,7 +3,7 @@ __author__ = 'ad'
 from collections import OrderedDict
 from nose.tools import raises
 from pyraml.model import Model
-from pyraml.fields import List, String, Reference, Map
+from pyraml.fields import List, String, Reference, Map, Or, Float
 
 
 def test_model_structure_inheritance():
@@ -71,3 +71,13 @@ def test_model_with_reference_and_aliased_field():
     res = RefThing.ref.to_python({"id": "some field"})
     assert isinstance(res, Thing), res
     assert res.id_ == "some field", res
+
+def test_model_with_or_successfully():
+    class Thing(Model):
+        a = Or(String(), Float())
+
+    res = Thing.a.to_python("a")
+    assert res == "a", res
+
+    res = Thing.a.to_python(1.1)
+    assert res == 1.1, res
