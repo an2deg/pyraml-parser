@@ -100,7 +100,7 @@ def test_resource_with_params():
     assert queryParam1.description == "name description"
     assert queryParam1.default == "three", queryParam1
     assert queryParam1.minLength == 3, queryParam1
-    assert queryParam1.type_ == "string", queryParam1
+    assert queryParam1.type == "string", queryParam1
     assert queryParam1.maxLength == 5, queryParam1
     assert queryParam1.pattern == '[a-z]{3,5}', queryParam1
     assert queryParam1.required == False, queryParam1

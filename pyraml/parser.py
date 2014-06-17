@@ -130,7 +130,7 @@ def parse(c, relative_path):
     root.mediaType = context.get_string_property('mediaType')
 
     root.documentation = context.get_property_with_schema('documentation', RamlRoot.documentation)
-    root.traits = context.get_property_with_schema('traits', RamlRoot.traits)
+    root.traits = parse_traits(context, RamlRoot.traits.field_name)
     root.resourceTypes = parse_resource_type(context)
 
     resources = OrderedDict()
@@ -214,7 +214,7 @@ def parse_resource_type(c):
         return None
 
     # We got list of dict from c.get('resourceTypes') so we need to convert it to dict
-    resource_types_context =  ParseContext(json_resource_types[0], c.relative_path)
+    resource_types_context = ParseContext(json_resource_types[0], c.relative_path)
 
     resource_types = {}
 
@@ -262,25 +262,69 @@ def parse_method(c, parent_object):
     method = RamlMethod()
     method.responses = c.get_property_with_schema("responses", RamlMethod.responses)
     method.description = c.get_string_property("description")
-    method.body = parse_body(ParseContext(c.get("body"), c.relative_path), method)
+    method.body = parse_body(ParseContext(c.get("body"), c.relative_path))
     method.queryParameters = c.get_property_with_schema("queryParameters", RamlMethod.queryParameters)
 
     return method
 
 
-def parse_body(c, parent_object):
+def parse_traits(c, property_name):
+    """
+    Parse and extract RAML trait from context field with name `property_name`
+
+    :param c: parsing context
+    :type c: ParseContext
+
+    :param property_name: resource name to extract from context
+    :type property_name: str
+
+    :return: dict of (str,RamlTrait) or None
+    :rtype: dict of (str,RamlTrait)
+    """
+    property_value = c.get(property_name)
+    if not property_value:
+        return None
+
+    traits = {}
+
+    # We got list of dict from c.get(property_name) so we need to iterate over it
+    for trait_raw_value in property_value:
+        traits_context = ParseContext(trait_raw_value, c.relative_path)
+
+
+        for trait_name in traits_context:
+            new_context = ParseContext(traits_context.get(trait_name), traits_context.relative_path)
+            trait = RamlTrait()
+
+            for field_name, field_class in RamlTrait._structure.iteritems():
+                # parse string fields
+                if isinstance(field_class, String):
+                    setattr(trait, field_name,  new_context.get_string_property(field_class.field_name))
+            trait.queryParameters = c.get_property_with_schema(RamlTrait.queryParameters.field_name,
+                                                               RamlTrait.queryParameters)
+            trait.body = parse_body(ParseContext(new_context.get("body"), new_context.relative_path))
+            trait.is_ = new_context.get_property_with_schema(RamlTrait.is_.field_name, RamlTrait.is_)
+            trait.responses = c.get_property_with_schema(RamlTrait.responses.field_name, RamlTrait.responses)
+
+            traits[trait_name] = trait
+
+    return traits
+
+
+
+def parse_body(c):
     """
     Parse and extract resource with name
 
     :param c:ParseContext object which contains RamlBody
     :type c: ParseContext
 
-    :param parent_object: RamlRoot, RamleResponse or RamlBody object
-    :type parent_object: RamlRoot or RamlBody or RamleResponse
-
     :return: RamlMethod  or None
     :rtype: RamlMethod
     """
+
+    if c.data is None:
+        return None
 
     body = RamlBody()
     body.example = c.get_string_property("example")
@@ -288,7 +332,7 @@ def parse_body(c, parent_object):
     _body = c.get("body")
     # Parse not null `body` inline property
     if _body:
-        body.body = parse_body(ParseContext(_body, c.relative_path), body)
+        body.body = parse_body(ParseContext(_body, c.relative_path))
 
     body.schema = c.get_string_property("schema")
     body.example = c.get_string_property("example")

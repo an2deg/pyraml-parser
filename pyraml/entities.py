@@ -21,7 +21,7 @@ class RamlQueryParameter(Model):
     description = String()
     example = Or(String(),Int(),Float())
     displayName = String()
-    type_ = String(field_name="type")
+    type = String()
     enum = List(Or(String(),Float(),Int()))
     pattern = String()
     minLength = Int()
@@ -80,6 +80,7 @@ class RamlTrait(Model):
     is_ = List(String(), field_name="is")
 
 
+
 class RamlResourceType(Model):
     methods = Map(String(), Reference(RamlTrait))
     type = String()
@@ -97,7 +98,8 @@ class RamlResource(Model):
     displayName = String()
     description = String()
     uri = String()
-    type = Reference(RamlTrait, field_name="is")
+    is_ = Reference(RamlTrait, field_name="is")
+    type = Reference(RamlResourceType)
     parentResource = Reference("pyraml.entities.RamlResource")
     methods = Map(String(), Reference(RamlBody))
     resources = Map(String(), Reference("pyraml.entities.RamlResource"))

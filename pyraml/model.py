@@ -20,6 +20,7 @@ class Schema(type):
         # Initialize special `_structure` class attribute which contains info about all model fields'
         _structure = {_name: _type for _name, _type in attrs.items() if isinstance(_type, BaseField)}
 
+
         # Merge structures of parent classes into the structure of new model class
         for base in bases:
             parent = base.__mro__[0]  # Multi inheritance is evil )
@@ -27,6 +28,11 @@ class Schema(type):
                 for field_name, field_type in parent._structure.items():
                     if field_name not in _structure:
                         _structure[field_name] = field_type
+
+        # Propagate field name from structure to the field, so we can access RAML field name
+        for field_name, field_obj in _structure.iteritems():
+            if field_obj.field_name is None:
+                field_obj.field_name = field_name
 
         attrs['_structure'] = _structure
 
