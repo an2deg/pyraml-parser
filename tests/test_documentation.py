@@ -27,3 +27,8 @@ eiusmod tempor incididunt ut labore et dolore magna...
 
     assert p.documentation[1].title == "Section", p.documentation[0].title
     assert p.documentation[1].content == "section content", p.documentation[1].content
+
+def test_numeric_version():
+    p = pyraml.parser.load(os.path.join(fixtures_dir, 'numeric-api-version.yaml'))
+    assert isinstance(p, RamlRoot), RamlRoot
+    assert p.version == 1, p.version

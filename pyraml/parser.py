@@ -126,7 +126,7 @@ def parse(c, relative_path):
     root.title = context.get_string_property('title', True)
 
     root.baseUri = context.get_string_property('baseUri')
-    root.version = context.get_string_property('version')
+    root.version = context.get('version')
     root.mediaType = context.get_string_property('mediaType')
 
     root.documentation = context.get_property_with_schema('documentation', RamlRoot.documentation)
@@ -429,8 +429,8 @@ def _load_network_resource(url):
 
 def _parse_raml_version(content):
     """
-    Get optional property `version` and make sure than it is string.
-    If not such property exists function returns None
+    Get optional property `version` and make sure that it is a string.
+    If the property does not exist the function returns None
 
     :return: string - property value or None
     :rtype : basestring or None
@@ -442,10 +442,10 @@ def _parse_raml_version(content):
 
     # version should be string but if version specified as "0.1" yaml package recognized
     # it as float, so we should handle this situation
-    if not isinstance(property_value, (basestring, float)):
+    if not (isinstance(property_value, (basestring, float)) or (isinstance(property_value, (basestring, int)))):
         raise RamlParseException("Property `version` must be string")
 
-    if isinstance(property_value, float):
+    if isinstance(property_value, float) or isinstance(property_value, int):
         res = str(property_value)
 
     return property_value
