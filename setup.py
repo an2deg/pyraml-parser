@@ -15,6 +15,9 @@ setup(
         'PyYAML>=3.10',
         'importhelpers>=0.2'
     ],
+    tests_require=['nose>=1.3.0'],
+    zip_safe=True,
+    include_package_data=True,
     classifiers=[
         'Development Status :: 1 - Alpha',
         'Environment :: Console',
