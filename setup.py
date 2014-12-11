@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='pyraml-parser',
-    version='0.0.2',
+    version='0.0.5',
     author='Andrii Degtiarov',
     author_email='andrew.degtiariov@gmail.com',
     packages=['pyraml'],
