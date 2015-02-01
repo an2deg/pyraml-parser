@@ -156,3 +156,20 @@ def test_resource_body():
     assert isinstance(get_method.body["multipart/form-data"].formParameters["form-1"], list)
 
 
+def test_global_media_type():
+    # Test real Github schema gotten from
+    # http://api-portal.anypoint.mulesoft.com/github/api/github-api-v3/github-api-v3.raml
+    #
+    # Resource of this schema don't have their own media types but use  global mediaType only.
+    # In this test we check than resources have correct media type.
+    p = pyraml.parser.load(os.path.join(fixtures_dir, 'github-api-v3.raml'))
+    assert "/search" in p.resources
+    assert "/repositories" in p.resources["/search"].resources
+    assert "get" in p.resources["/search"].resources["/repositories"].methods
+
+    entity = p.resources["/search"].resources["/repositories"].methods["get"]
+
+    assert 200 in entity.responses
+    assert "application/json" in entity.responses[200].body
+    assert len(entity.responses[200].body) == 1
+

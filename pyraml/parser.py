@@ -136,13 +136,13 @@ def parse(c, relative_path):
     root.mediaType = context.get_string_property('mediaType')
 
     root.documentation = context.get_property_with_schema('documentation', RamlRoot.documentation)
-    root.traits = parse_traits(context, RamlRoot.traits.field_name)
+    root.traits = parse_traits(context, RamlRoot.traits.field_name, root.mediaType)
     root.resourceTypes = parse_resource_type(context)
 
     resources = OrderedDict()
     for property_name in context.__iter__():
         if property_name.startswith("/"):
-            resources[property_name] = parse_resource(context, property_name, root)
+            resources[property_name] = parse_resource(context, property_name, root, root.mediaType)
 
     if resources > 0:
         root.resources = resources
@@ -150,7 +150,7 @@ def parse(c, relative_path):
     return root
 
 
-def parse_resource(c, property_name, parent_object):
+def parse_resource(c, property_name, parent_object, global_media_type):
     """
     Parse and extract resource with name
 
@@ -174,6 +174,7 @@ def parse_resource(c, property_name, parent_object):
     new_context = ParseContext(property_value, c.relative_path)
     resource.description = new_context.get_string_property("description")
     resource.displayName = new_context.get_string_property("displayName")
+
     if isinstance(parent_object, RamlResource):
         resource.parentResource = parent_object
 
@@ -182,7 +183,7 @@ def parse_resource(c, property_name, parent_object):
     for _http_method in HTTP_METHODS:
         _method = new_context.get(_http_method)
         if _method:
-            methods[_http_method] = parse_method(ParseContext(_method, c.relative_path), resource)
+            methods[_http_method] = parse_method(ParseContext(_method, c.relative_path), global_media_type)
         elif _http_method in new_context.data:
             # workaround: if _http_method is already in new_context.data than
             # it's marked as !!null
@@ -194,7 +195,7 @@ def parse_resource(c, property_name, parent_object):
     resources = OrderedDict()
     for property_name in new_context.__iter__():
         if property_name.startswith("/"):
-            resources[property_name] = parse_resource(new_context, property_name, resource)
+            resources[property_name] = parse_resource(new_context, property_name, resource, global_media_type)
 
     if resources > 0:
         resource.resources = resources
@@ -248,7 +249,7 @@ def parse_resource_type(c):
     return resource_types
 
 
-def parse_method(c, parent_object):
+def parse_method(c, global_media_type):
     """
     Parse RAML method
 
@@ -265,9 +266,9 @@ def parse_method(c, parent_object):
     method = RamlMethod()
 
     method.description = c.get_string_property("description")
-    method.body = parse_inline_body(c.get("body"), c.relative_path)
+    method.body = parse_inline_body(c.get("body"), c.relative_path, global_media_type)
 
-    parsed_responses = parse_inline_body(c.get("responses"), c.relative_path)
+    parsed_responses = parse_inline_body(c.get("responses"), c.relative_path, global_media_type)
     if parsed_responses:
         new_parsed_responses = OrderedDict()
         for resp_code, parsed_data in parsed_responses.iteritems():
@@ -289,7 +290,7 @@ def parse_method(c, parent_object):
     return method
 
 
-def parse_traits(c, property_name):
+def parse_traits(c, property_name, global_media_type):
     """
     Parse and extract RAML trait from context field with name `property_name`
 
@@ -323,7 +324,7 @@ def parse_traits(c, property_name):
                     setattr(trait, field_name,  new_context.get_string_property(field_class.field_name))
             trait.queryParameters = c.get_property_with_schema(RamlTrait.queryParameters.field_name,
                                                                RamlTrait.queryParameters)
-            trait.body = parse_body(ParseContext(new_context.get("body"), new_context.relative_path))
+            trait.body = parse_body(ParseContext(new_context.get("body"), new_context.relative_path), global_media_type)
             trait.is_ = new_context.get_property_with_schema(RamlTrait.is_.field_name, RamlTrait.is_)
             trait.responses = c.get_property_with_schema(RamlTrait.responses.field_name, RamlTrait.responses)
 
@@ -358,7 +359,7 @@ def parse_map_of_entities(parser, context, relative_path, parent_resource):
     return res
 
 
-def parse_body(c):
+def parse_body(c, global_media_type):
     """
     Parse and extract resource with name
 
@@ -374,7 +375,7 @@ def parse_body(c):
 
     body = RamlBody()
     body.example = c.get_string_property("example")
-    body.body = parse_inline_body(c.get("body"), c.relative_path)
+    body.body = parse_inline_body(c.get("body"), c.relative_path, global_media_type)
 
     body.schema = c.get_string_property("schema")
     body.example = c.get_string_property("example")
@@ -384,7 +385,7 @@ def parse_body(c):
     return body
 
 
-def parse_inline_body(data, relative_path):
+def parse_inline_body(data, relative_path, global_media_type):
     """
     Parse not null `body` inline property
 
@@ -399,9 +400,20 @@ def parse_inline_body(data, relative_path):
         return None
 
     res = OrderedDict()
+
+    # Data could be map of mime_type => body, http_code => body but also it could be direct
+    # value of RamlBody with global mediaType (grrr... so consistent)
+    for field_name in RamlBody._structure:
+        if field_name in data:
+            # This is direct value of RamlBody
+            parsed_data = parse_body(ParseContext(data, relative_path), global_media_type)
+            res[global_media_type] = parsed_data
+            return res
+
+
     for key, body_data in data.iteritems():
         if body_data:
-            res[key] = parse_body(ParseContext(body_data, relative_path))
+            res[key] = parse_body(ParseContext(body_data, relative_path), global_media_type)
         else:
             # body marked as !!null
             res[key] = RamlBody(notNull=True)
