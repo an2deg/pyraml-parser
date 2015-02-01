@@ -37,14 +37,16 @@ class RamlHeader(Model):
     type = String()
     required = Bool()
 
+
 class RamlBody(Model):
     schema = String()
     example = String()
     notNull = Bool()
-    formParameters = Map(String(), Reference(RamlHeader))
+    formParameters = Map(String(), Or(Reference(RamlQueryParameter), List(Reference(RamlQueryParameter))))
     headers = Map(String(), Reference(RamlHeader))
     body = Map(String(), Reference("pyraml.entities.RamlBody"))
     is_ = List(String(), field_name="is")
+
 
 class RamlResponse(Model):
     schema = String()
@@ -53,6 +55,7 @@ class RamlResponse(Model):
     description = String()
     headers = Map(String(), Reference(RamlHeader))
     body = Reference("pyraml.entities.RamlBody")
+
 
 class RamlTrait(Model):
     """
@@ -80,16 +83,39 @@ class RamlTrait(Model):
     is_ = List(String(), field_name="is")
 
 
-
 class RamlResourceType(Model):
     methods = Map(String(), Reference(RamlTrait))
     type = String()
     is_ = List(String(), field_name="is")
 
+
 class RamlMethod(Model):
+    """
+    Example:
+        get:
+            description: ...
+            headers:
+                ....
+            queryParameters:
+                ...
+            body:
+                text/xml: !!null
+                application/json:
+                    schema: |
+                        {
+                            ....
+                        }
+            responses:
+                200:
+                    ....
+                <<:
+                    404:
+                        description: not found
+
+    """
     notNull = Bool()
     description = String()
-    body = Reference(RamlBody)
+    body = Map(String(), Reference(RamlBody))
     responses = Map(Int(), Reference(RamlBody))
     queryParameters = Map(String(), Reference(RamlQueryParameter))
 

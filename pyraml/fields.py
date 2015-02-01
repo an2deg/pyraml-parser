@@ -356,7 +356,7 @@ class Map(BaseField):
         Validate value to match rules
 
         :param value: value to validate
-        :type value: list
+        :type value: list or dict
         :return: None
         """
         if value is not None:
@@ -374,9 +374,10 @@ class Map(BaseField):
                     )
                 value = _value
             else:
-                value = OrderedDict([
-                    (self._key_type.to_python(key), self._value_type.to_python(val))
-                    for key, val in value.items()])
+                _value = OrderedDict()
+                for key, val in value.iteritems():
+                    _value[self._key_type.to_python(key)] = self._value_type.to_python(val)
+                value = _value
 
         self.validate(value)
 
@@ -463,6 +464,9 @@ class Reference(BaseField):
         elif value is None:
             # Value empty, just instantiate empty `ref_class`
             value = self.ref_class()
+        #elif isinstance(value, list):
+        #    # Value maybe is list of `ref_class`
+        #    value = []
         else:
             raise ValueError("{!r} expected to be dict".format(value))
         self.validate(value)
@@ -521,7 +525,7 @@ class Or(BaseField):
             try:
                 field.validate(value)
                 break
-            except ValueError:
+            except ValueError as e:
                 pass
         else:
             # No one of variants doesn't accept `value`
@@ -529,22 +533,23 @@ class Or(BaseField):
                                                                      ",".join(
                                                                          [type(f).__name__ for f in self.variants])))
 
-        def to_python(self, value):
-            """
-            Convert value to python representation
+    def to_python(self, value):
+        """
+        Convert value to python representation
 
-            :param value: a field to process
-            :type value: any
+        :param value: a field to process
+        :type value: any
 
-            :return: first of accepted variant
-            """
+        :return: first of accepted variant
+        """
 
-            for field in self.variants:
-                try:
-                    field.validate(value)
-                    return field.to_python(value)
-                except ValueError:
-                    pass
-            else:
-                # Raise ValueError
-                self.validate(value)
+        for field in self.variants:
+            try:
+                res = field.to_python(value)
+                field.validate(res)
+                return res
+            except ValueError:
+                pass
+        else:
+            # Raise ValueError
+            self.validate(value)

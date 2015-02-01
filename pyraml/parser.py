@@ -14,6 +14,11 @@ from entities import RamlRoot, RamlResource, RamlMethod, RamlBody, RamlResourceT
 from constants import RAML_SUPPORTED_FORMAT_VERSION
 import bootstrap
 
+__all__ = ["RamlException", "RamlNotFoundException", "RamlParseException",
+           "ParseContext", "load", "parse"]
+
+HTTP_METHODS = ("get", "post", "put", "delete", "head")
+
 
 class RamlException(StandardError):
     pass
@@ -40,7 +45,7 @@ class ParseContext(object):
         :type property_name: str
 
         :return: object
-        :rtype: object or None
+        :rtype: object or None or dict
         """
 
         # Handle special case with null object
@@ -91,10 +96,11 @@ def load(uri):
     """
     Load and parse RAML file
 
-    :param uri:
+    :param uri: URL which points to a RAML resource or path to the RAML resource on local file system
     :type uri: str
 
-    :return:
+    :return: RamlRoot object
+    :rtype: pyraml.entities.RamlRoot
     """
 
     if _is_network_resource(uri):
@@ -173,17 +179,14 @@ def parse_resource(c, property_name, parent_object):
 
     # Parse methods
     methods = OrderedDict()
-    for _http_method in ["get", "post", "put", "delete", "head"]:
+    for _http_method in HTTP_METHODS:
         _method = new_context.get(_http_method)
         if _method:
-            _method = parse_method(ParseContext(_method, c.relative_path), resource)
-            methods[_http_method] = _method
+            methods[_http_method] = parse_method(ParseContext(_method, c.relative_path), resource)
         elif _http_method in new_context.data:
             # workaround: if _http_method is already in new_context.data than
             # it's marked as !!null
-            _method = RamlMethod(notNull=True)
-            methods[_http_method] = _method
-
+            methods[_http_method] = RamlMethod(notNull=True)
     if len(methods):
         resource.methods = methods
 
@@ -227,7 +230,7 @@ def parse_resource_type(c):
 
         # Parse methods
         methods = OrderedDict()
-        for _http_method in ["get", "post", "put", "delete", "head"]:
+        for _http_method in HTTP_METHODS:
             _method = new_c.get(_http_method)
             if _method:
                 _method = ParseContext(_method, new_c.relative_path).get_property_with_schema('traits', Reference(RamlTrait))
@@ -237,13 +240,13 @@ def parse_resource_type(c):
                 # it's marked as !!null
                 _method = RamlMethod(notNull=True)
                 methods[_http_method] = _method
-
         if len(methods):
             rtype_obj.methods = methods
 
         resource_types[rtype_name] = rtype_obj
 
     return resource_types
+
 
 def parse_method(c, parent_object):
     """
@@ -255,15 +258,33 @@ def parse_method(c, parent_object):
     :param parent_object: RamlRoot, RamlResource or RamlResourceType object
     :type parent_object: RamlRoot or RamlResource or RamlResourceType
 
-    :return: RamlMethod  or None
+    :return: RamlMethod or None
     :rtype: RamlMethod
     """
 
     method = RamlMethod()
-    method.responses = c.get_property_with_schema("responses", RamlMethod.responses)
+
     method.description = c.get_string_property("description")
-    method.body = parse_body(ParseContext(c.get("body"), c.relative_path))
+    method.body = parse_inline_body(c.get("body"), c.relative_path)
+
+    parsed_responses = parse_inline_body(c.get("responses"), c.relative_path)
+    if parsed_responses:
+        new_parsed_responses = OrderedDict()
+        for resp_code, parsed_data in parsed_responses.iteritems():
+            if resp_code == "<<":
+                # Check for default code (equivalent of wildcard "*")
+                new_parsed_responses.setdefault(parsed_data)
+            else:
+                # Otherwise response code should be numeric HTTP response code
+                try:
+                    resp_code = int(resp_code)
+                except ValueError:
+                    raise RamlParseException("Expected numeric HTTP response code in responses but got {!r}".format(resp_code))
+                new_parsed_responses[resp_code] = parsed_data
+        method.responses = new_parsed_responses
+
     method.queryParameters = c.get_property_with_schema("queryParameters", RamlMethod.queryParameters)
+
 
     return method
 
@@ -311,16 +332,41 @@ def parse_traits(c, property_name):
     return traits
 
 
+def parse_map_of_entities(parser, context, relative_path, parent_resource):
+    """
+
+    :param parser: function which accepts 3 arguments: data, relative_path and parent_resource
+    where entity is content
+    :type parser: callable
+    :param context: current parse context
+    :type context: dict
+    :param relative_path:
+    :param parent_resource:
+    :return:
+    """
+    res = OrderedDict()
+
+    if context:
+        for key, value in context.items():
+            if value:
+                res[key] = parser(value, relative_path, parent_resource)
+            else:
+                # workaround: if `key` is already in `context` than
+                # it's marked as !!null
+                res[key] = RamlMethod(notNull=True)
+
+    return res
+
 
 def parse_body(c):
     """
     Parse and extract resource with name
 
-    :param c:ParseContext object which contains RamlBody
+    :param c: ParseContext object which contains RamlBody
     :type c: ParseContext
 
-    :return: RamlMethod  or None
-    :rtype: RamlMethod
+    :return: RamlBody or None
+    :rtype: RamlBody
     """
 
     if c.data is None:
@@ -328,11 +374,7 @@ def parse_body(c):
 
     body = RamlBody()
     body.example = c.get_string_property("example")
-
-    _body = c.get("body")
-    # Parse not null `body` inline property
-    if _body:
-        body.body = parse_body(ParseContext(_body, c.relative_path))
+    body.body = parse_inline_body(c.get("body"), c.relative_path)
 
     body.schema = c.get_string_property("schema")
     body.example = c.get_string_property("example")
@@ -341,6 +383,30 @@ def parse_body(c):
 
     return body
 
+
+def parse_inline_body(data, relative_path):
+    """
+    Parse not null `body` inline property
+
+    :param data: value of `body` property
+    :type data: dict
+    :param relative_path: relative path on filesystem to a RAML resource for handling `include` tags
+    :type relative_path: str
+    :return: OrderedDict of RamlBody or None
+    :rtype: OrderedDict of RamlBody
+    """
+    if data is None:
+        return None
+
+    res = OrderedDict()
+    for key, body_data in data.iteritems():
+        if body_data:
+            res[key] = parse_body(ParseContext(body_data, relative_path))
+        else:
+            # body marked as !!null
+            res[key] = RamlBody(notNull=True)
+
+    return res
 
 def _validate_raml_header(line):
     """

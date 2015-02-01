@@ -3,7 +3,8 @@ __author__ = 'ad'
 import os.path
 import pyraml.parser
 from collections import OrderedDict
-from pyraml.entities import RamlResource, RamlMethod, RamlQueryParameter
+from pyraml.fields import Bool
+from pyraml.entities import RamlResource, RamlMethod, RamlQueryParameter, RamlBody
 
 fixtures_dir = os.path.join(os.path.dirname(__file__), '..', 'samples')
 
@@ -105,4 +106,53 @@ def test_resource_with_params():
     assert queryParam1.pattern == '[a-z]{3,5}', queryParam1
     assert queryParam1.required == False, queryParam1
     assert queryParam1.repeat == False, queryParam1
+
+
+def test_resource_body():
+    p = pyraml.parser.load(os.path.join(fixtures_dir, 'full-config.yaml'))
+    assert "/media" in p.resources
+    res = p.resources['/media']
+    assert "get" in res.methods
+
+    get_method = res.methods["get"]
+
+    # For text/xml we have only `!!null`
+    assert "text/xml" in get_method.body
+    assert isinstance(get_method.body["text/xml"], RamlBody)
+    assert get_method.body["text/xml"].notNull is True, get_method.body["text/xml"]
+    assert not get_method.body["text/xml"].schema
+    assert not get_method.body["text/xml"].example
+    assert not get_method.body["text/xml"].is_
+    assert not get_method.body["text/xml"].body
+    assert not get_method.body["text/xml"].headers
+    assert not get_method.body["text/xml"].formParameters
+
+    # For application/json we have schema and example, they should be string
+    assert "application/json" in get_method.body
+    assert isinstance(get_method.body["application/json"], RamlBody)
+    assert not get_method.body["application/json"].is_
+    assert not get_method.body["application/json"].body
+    assert not get_method.body["application/json"].headers
+    assert not get_method.body["application/json"].formParameters
+
+    assert get_method.body["application/json"].schema, get_method.body["application/json"].schema
+    assert isinstance(get_method.body["application/json"].schema, basestring), get_method.body["application/json"].schema
+    assert get_method.body["application/json"].example, get_method.body["application/json"].example
+    assert isinstance(get_method.body["application/json"].example, basestring), get_method.body["application/json"].example
+
+    # For multipart/form-data we have only formParameters
+    assert "multipart/form-data" in get_method.body
+    assert isinstance(get_method.body["multipart/form-data"], RamlBody)
+    assert not get_method.body["multipart/form-data"].notNull
+    assert not get_method.body["multipart/form-data"].schema
+    assert not get_method.body["multipart/form-data"].example
+    assert not get_method.body["multipart/form-data"].is_
+    assert not get_method.body["multipart/form-data"].body
+    assert not get_method.body["multipart/form-data"].headers
+    assert get_method.body["multipart/form-data"].formParameters, get_method.body["multipart/form-data"].formParameters
+
+    assert "form-1" in get_method.body["multipart/form-data"].formParameters
+    assert "form-2" in get_method.body["multipart/form-data"].formParameters
+    assert isinstance(get_method.body["multipart/form-data"].formParameters["form-1"], list)
+
 
