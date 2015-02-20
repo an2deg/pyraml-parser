@@ -22,6 +22,7 @@ def test_resource_nested():
     assert root_resource.parentResource is None, p.resources
     assert root_resource.methods is not None, p.resources
     assert root_resource.description == "Media Description", root_resource
+    assert root_resource.displayName == "Media", root_resource
     assert "get" in root_resource.methods, p.resources
     assert isinstance(root_resource.methods["get"], RamlMethod), p.resources
     assert root_resource.methods["get"].notNull, p.resources
@@ -172,4 +173,3 @@ def test_global_media_type():
     assert 200 in entity.responses
     assert "application/json" in entity.responses[200].body
     assert len(entity.responses[200].body) == 1
-
