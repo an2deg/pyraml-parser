@@ -1,6 +1,6 @@
 __author__ = 'ad'
 
-from fields import BaseField, String, List
+from fields import BaseField
 
 
 class ValidationError(StandardError):
@@ -17,11 +17,14 @@ class BaseModel(object):
 
 class Schema(type):
     def __new__(mcs, name, bases, attrs):
-        # Initialize special `_structure` class attribute which contains info about all model fields'
-        _structure = {_name: _type for _name, _type in attrs.items() if isinstance(_type, BaseField)}
+        # Initialize special `_structure` class attribute which
+        # contains info about all model fields'
+        _structure = {
+            _name: _type for _name, _type in
+            attrs.items() if isinstance(_type, BaseField)}
 
-
-        # Merge structures of parent classes into the structure of new model class
+        # Merge structures of parent classes into the structure of new model
+        # class
         for base in bases:
             parent = base.__mro__[0]  # Multi inheritance is evil )
             if issubclass(parent, BaseModel) and not parent is BaseModel:
@@ -29,7 +32,8 @@ class Schema(type):
                     if field_name not in _structure:
                         _structure[field_name] = field_type
 
-        # Propagate field name from structure to the field, so we can access RAML field name
+        # Propagate field name from structure to the field, so we can access
+        # RAML field name
         for field_name, field_obj in _structure.iteritems():
             if field_obj.field_name is None:
                 field_obj.field_name = field_name
@@ -64,7 +68,8 @@ class Model(BaseModel):
         # Propagate an object attributes from field names
         for field_name, field_type in self.__class__._structure.items():
             if field_name in kwargs:
-                setattr(self, field_name, field_type.to_python(kwargs[field_name]))
+                setattr(self, field_name,
+                        field_type.to_python(kwargs[field_name]))
             else:
                 setattr(self, field_name, None)
 
@@ -102,7 +107,8 @@ class Model(BaseModel):
         for model_field_name, field_type in cls._structure.items():
             # Validate and process a field of JSON object
             try:
-                value = field_type.to_python(json_object.get(model_field_name, None))
+                value = field_type.to_python(
+                    json_object.get(model_field_name, None))
                 setattr(rv, model_field_name, value)
             except ValueError as e:
                 errors[model_field_name] = unicode(e)
@@ -121,6 +127,3 @@ class Model(BaseModel):
             raise ValidationError(errors)
 
         return rv
-
-
-
