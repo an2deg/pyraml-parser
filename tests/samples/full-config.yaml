@@ -28,8 +28,6 @@ documentation:
           eiusmod tempor incididunt ut labore et dolore magna...
     - title: section
       content: section content
-    - content: content without title
-    - title: title without content
 protocols: [HTTP, HTTPS]
 mediaType: application/json
 schemas:

@@ -4,6 +4,7 @@ title: Example API
 version: v1
 resourceTypes:
     - !include resource-type.yaml
-
+documentation:
+    - !include documentation-sequence-item.yaml
 /simple:
     type: simple

@@ -18,7 +18,7 @@ The pyraml package can be installed with ``pip`` or ``easy_install`` from GIT re
 Developing pyraml-paser
 -----------------------
 
-You may need to install package ``nosetests`` for running pyraml-parser tests. The project provides helper script
+You may need to install package ``nosetests`` and ``mock`` for running pyraml-parser tests. The project provides helper script
 ``run-tests.py`` which executes all tests inside directory tests and it supports all ``nosetests`` parameters.
 
 Typical installation process for developing purposes:

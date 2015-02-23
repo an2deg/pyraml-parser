@@ -5,8 +5,8 @@ from fields import String, Reference, Map, List, Bool, Int, Float, Or
 
 
 class RamlDocumentation(Model):
-    content = String()
-    title = String()
+    title = String(required=True)
+    content = String(required=True)
 
 
 class RamlSchema(Model):
@@ -147,9 +147,9 @@ class RamlResource(Model):
 
 class RamlRoot(Model):
     raml_version = String(required=True)
-    title = String()
+    title = String(required=True)
     version = String()
-    baseUri = String()
+    baseUri = String(required=True)
     protocols = List(String())
     mediaType = String()
     documentation = List(Reference(RamlDocumentation))

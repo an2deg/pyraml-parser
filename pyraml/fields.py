@@ -20,7 +20,7 @@ class BaseField(object):
         :raise ValueError: in case of validation errors
         """
         if value is None and self.required:
-            raise ValueError("Missed value for required field")
+            raise ValueError("Missed value for the required field")
 
     def from_python(self, value):
         """
@@ -356,8 +356,11 @@ class Map(BaseField):
         :type value: list or dict
         :return: None
         """
+        from pyraml.parser import ParseContext
         if value is not None:
             # At this point we could get list of dict or dict
+            if isinstance(value, ParseContext):
+                value = value.data
             if isinstance(value, list):
                 _value = OrderedDict()
                 for item in value:
