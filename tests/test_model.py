@@ -1,7 +1,6 @@
 __author__ = 'ad'
 
 from collections import OrderedDict
-from nose.tools import raises
 from pyraml.model import Model
 from pyraml.fields import List, String, Reference, Map, Or, Float
 

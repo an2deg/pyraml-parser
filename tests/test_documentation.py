@@ -1,14 +1,17 @@
 __author__ = 'ad'
 
 import os.path
+
 import pyraml.parser
 from pyraml.entities import RamlRoot, RamlDocumentation
+
 
 fixtures_dir = os.path.join(os.path.dirname(__file__), '..', 'samples')
 
 
 def test_include_raml():
-    p = pyraml.parser.load(os.path.join(fixtures_dir, 'root-elements-includes.yaml'))
+    p = pyraml.parser.load(
+        os.path.join(fixtures_dir, 'root-elements-includes.yaml'))
     assert isinstance(p, RamlRoot), RamlRoot
     assert p.raml_version == "0.8", p.raml_version
     assert p.title == "included title", p.title
