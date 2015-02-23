@@ -3,8 +3,9 @@ __author__ = 'ad'
 import os.path
 import pyraml.parser
 from collections import OrderedDict
-from pyraml.fields import Bool
-from pyraml.entities import RamlResource, RamlMethod, RamlQueryParameter, RamlBody
+from pyraml.entities import (
+    RamlResource, RamlMethod, RamlQueryParameter, RamlBody)
+
 
 fixtures_dir = os.path.join(os.path.dirname(__file__), '..', 'samples')
 
@@ -77,7 +78,8 @@ def test_resource_with_responses():
 
 
 def test_resource_with_params():
-    p = pyraml.parser.load(os.path.join(fixtures_dir, 'params', 'param-types.yaml'))
+    p = pyraml.parser.load(
+        os.path.join(fixtures_dir, 'params', 'param-types.yaml'))
     assert isinstance(p.resources, OrderedDict), p.resources
 
     assert "/simple" in p.resources, p
@@ -172,4 +174,3 @@ def test_global_media_type():
     assert 200 in entity.responses
     assert "application/json" in entity.responses[200].body
     assert len(entity.responses[200].body) == 1
-

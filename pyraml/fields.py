@@ -32,7 +32,8 @@ class BaseField(object):
 
     def to_python(self, value):
         """
-        Do de-from_python steps from converting object from JSON representation to python representation
+        Do de-from_python steps from converting object from JSON
+        representation to python representation
         """
         self.validate(value)
         return value
@@ -54,9 +55,10 @@ class String(BaseField):
 
         :param max_len: Restrict maximum length of the field
         :type max_len: int
-        :param force_conversion: Set to true in order to ignore real type of a value and convert it into unicode.
-         We have to have this parameter b/c YAML format doesn't not have schema and string '17.30' is always
-         translated to float 17.30
+        :param force_conversion: Set to true in order to ignore real type of
+            a value and convert it into unicode. We have to have this parameter
+            b/c YAML format doesn't not have schema and string '17.30' is always
+            translated to float 17.30
         :type force_conversion: bool
         """
         super(String, self).__init__(**kwargs)
@@ -69,13 +71,16 @@ class String(BaseField):
             return
 
         if not isinstance(value, basestring):
-            raise ValueError("{!r} expected to be string but got {}".format(value, type(value).__name__))
+            raise ValueError(
+                "{!r} expected to be string but got {}".format(
+                    value, type(value).__name__))
 
         if self._max_len is not None:
             value_len = len(value)
             if value_len > self._max_len:
-                raise ValueError("length of field is exceeds maximum allowed: {} but expect no more then {}".format(
-                    value_len, self._max_len))
+                raise ValueError(
+                    "length of field is exceeds maximum allowed: {} but "
+                    "expect no more than {}".format(value_len, self._max_len))
 
     def to_python(self, value):
         """
@@ -204,7 +209,9 @@ class Float(BaseField):
             return
 
         if not isinstance(value, float):
-            raise ValueError("{!r} expected to be integer but got {}".format(value, type(value).__name__))
+            raise ValueError(
+                "{!r} expected to be integer but got {}".format(
+                    value, type(value).__name__))
 
     def to_python(self, value):
         """
@@ -246,8 +253,8 @@ class List(BaseField):
 
         if not isinstance(element_type, BaseField):
             raise ValueError(
-                "Invalid type of 'element_type': expected to be instance of subclass of BaseField but it is {!r}".format(
-                    element_type))
+                "Invalid type of 'element_type': expected to be instance of "
+                "subclass of BaseField but it is {!r}".format(element_type))
         self._min_len = min_len
         self._max_len = max_len
         self._element_type = element_type
@@ -271,12 +278,14 @@ class List(BaseField):
 
         value_len = len(value)
         if self._max_len is not None and value_len > self._max_len:
-            raise ValueError("length of field is exceeds maximum allowed: {} but expect no more then {}".format(
-                value_len, self._max_len))
+            raise ValueError(
+                "length of field is exceeds maximum allowed: {} but expect "
+                "no more than {}".format(value_len, self._max_len))
 
         if self._min_len is not None and value_len < self._min_len:
-            raise ValueError("length of field is less then minimum allowed: {} but expect no less then {}".format(
-                value_len, self._max_len))
+            raise ValueError(
+                "length of field is less than minimum allowed: {} "
+                "but expect no less than {}".format(value_len, self._max_len))
 
     def to_python(self, value):
         """
@@ -321,12 +330,12 @@ class Map(BaseField):
 
         if not isinstance(key_type, BaseField):
             raise ValueError(
-                "Invalid type of 'key_type': expected to be instance of subclass of BaseField but it is {!r}".format(
-                    key_type))
+                "Invalid type of 'key_type': expected to be instance of "
+                "subclass of BaseField but it is {!r}".format(key_type))
         if not isinstance(value_type, BaseField):
             raise ValueError(
-                "Invalid type of 'value_type': expected to be instance of subclass of BaseField but it is {!r}".format(
-                    value_type))
+                "Invalid type of 'value_type': expected to be instance "
+                "of subclass of BaseField but it is {!r}".format(value_type))
 
         self._value_type = value_type
         self._key_type = key_type
@@ -365,7 +374,8 @@ class Map(BaseField):
                 _value = OrderedDict()
                 for item in value:
                     if not isinstance(item, (dict, OrderedDict)):
-                        raise ValueError("{!r} expected to be dict or list of dict".format(value))
+                        raise ValueError("{!r} expected to be dict or list of "
+                                         "dict".format(value))
 
                     _value.update(
                         OrderedDict([
@@ -418,8 +428,8 @@ class Reference(BaseField):
 
     def _lazy_import(self):
         """
-        If self.ref_class is string like "pyraml.entities.RamlTrait" just import the class
-        and assign it to self.ref_class
+        If self.ref_class is string like "pyraml.entities.RamlTrait"
+        just import the class and assign it to self.ref_class
 
         :return: None
         """
@@ -441,7 +451,8 @@ class Reference(BaseField):
             return
 
         if not isinstance(value, self.ref_class):
-            raise ValueError("{!r} expected to be {}".format(value, self.ref_class))
+            raise ValueError("{!r} expected to be {}".format(
+                value, self.ref_class))
 
     def to_python(self, value):
         """
@@ -502,11 +513,15 @@ class Or(BaseField):
         self.variants = []
         for field in args:
             if not isinstance(field, BaseField):
-                raise ValueError("Invalid argument supplied {!r}: expected list of BaseField instances".format(field))
+                raise ValueError(
+                    "Invalid argument supplied {!r}: expected list of "
+                    "BaseField instances".format(field))
             self.variants.append(field)
 
         if len(self.variants) < 2:
-            raise ValueError("Required at least 2 variants but got only {}".format(len(self.variants)))
+            raise ValueError(
+                "Required at least 2 variants but got only {}".format(
+                    len(self.variants)))
 
     def validate(self, value):
         """
@@ -525,13 +540,13 @@ class Or(BaseField):
             try:
                 field.validate(value)
                 break
-            except ValueError as e:
+            except ValueError:
                 pass
         else:
             # No one of variants doesn't accept `value`
-            raise ValueError("{!r} expected to be one of: {}".format(value,
-                                                                     ",".join(
-                                                                         [type(f).__name__ for f in self.variants])))
+            raise ValueError(
+                "{!r} expected to be one of: {}".format(
+                    value, ",".join([type(f).__name__ for f in self.variants])))
 
     def to_python(self, value):
         """
