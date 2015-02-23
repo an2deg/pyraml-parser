@@ -11,9 +11,19 @@ class RamlDocumentation(Model):
 
 class RamlSchema(Model):
     name = String()
-    type = String()
     schema = String()
-    example = String()
+
+    @classmethod
+    def from_json(self, json_object):
+        """ Restructure input data
+        from {name: schema}
+        to   {name: name, schema: schema} form.
+        """
+        data = {
+            'name': json_object.keys()[0],
+            'schema': json_object.values()[0],
+        }
+        return super(RamlSchema, self).from_json(data)
 
 
 class RamlQueryParameter(Model):
@@ -146,3 +156,5 @@ class RamlRoot(Model):
     traits = Map(String(), Reference(RamlTrait))
     resources = Map(String(), Reference(RamlResource))
     resourceTypes = Map(String(), Reference(RamlResourceType))
+    schemas = List(Reference(RamlSchema))
+    protocols = List(String())

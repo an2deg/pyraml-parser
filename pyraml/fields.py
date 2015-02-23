@@ -18,11 +18,9 @@ class BaseField(object):
         Validate `value`
 
         :raise ValueError: in case of validation errors
-
         """
-
         if value is None and self.required:
-            raise ValueError("missed value for required field")
+            raise ValueError("Missed value for required field")
 
     def from_python(self, value):
         """
@@ -45,8 +43,6 @@ class String(BaseField):
 
      >>> some_field = String(max_len=1000)
      >>> some_field.to_python("Some thing") == "Some thing"
-
-
     """
 
     def __init__(self, max_len=None, **kwargs):
@@ -55,11 +51,6 @@ class String(BaseField):
 
         :param max_len: Restrict maximum length of the field
         :type max_len: int
-        :param force_conversion: Set to true in order to ignore real type of
-            a value and convert it into unicode. We have to have this parameter
-            b/c YAML format doesn't not have schema and string '17.30' is always
-            translated to float 17.30
-        :type force_conversion: bool
         """
         super(String, self).__init__(**kwargs)
         self._max_len = max_len
@@ -79,7 +70,7 @@ class String(BaseField):
             value_len = len(value)
             if value_len > self._max_len:
                 raise ValueError(
-                    "length of field is exceeds maximum allowed: {} but "
+                    "Length of field is exceeds maximum allowed: {} but "
                     "expect no more than {}".format(value_len, self._max_len))
 
     def to_python(self, value):
@@ -91,7 +82,6 @@ class String(BaseField):
 
         :return: string
         :rtype: basestring
-
         """
         self.validate(value)
 
@@ -105,7 +95,6 @@ class Bool(BaseField):
      >>> some_field = Bool()
 
      >>> some_field.to_python(True) == True
-
     """
 
     def __init__(self, **kwargs):
@@ -267,7 +256,6 @@ class List(BaseField):
         :type value: list
         :return: None
         """
-
         super(List, self).validate(value)
 
         if value is None:
@@ -279,12 +267,12 @@ class List(BaseField):
         value_len = len(value)
         if self._max_len is not None and value_len > self._max_len:
             raise ValueError(
-                "length of field is exceeds maximum allowed: {} but expect "
+                "Length of field is exceeds maximum allowed: {} but expect "
                 "no more than {}".format(value_len, self._max_len))
 
         if self._min_len is not None and value_len < self._min_len:
             raise ValueError(
-                "length of field is less than minimum allowed: {} "
+                "Length of field is less than minimum allowed: {} "
                 "but expect no less than {}".format(value_len, self._max_len))
 
     def to_python(self, value):

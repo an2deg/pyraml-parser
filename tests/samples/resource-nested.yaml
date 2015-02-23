@@ -1,0 +1,21 @@
+#%RAML 0.8
+---
+title: Sample API
+version: v1
+baseUri: https://api.sample.com/
+/media:
+    description: Media Description
+    displayName: Media
+    get: !!null
+    /search:
+        description: Media Search Description
+        displayName: Media Search
+        get: !!null
+    /tags:
+        description: Tags Description
+        displayName: Tags
+        get: !!null
+        /search:
+            description: Tag Search Description
+            displayName: Tag Search
+            get: !!null

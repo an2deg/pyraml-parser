@@ -1,13 +1,61 @@
-__author__ = 'ad'
-
 import os.path
-import pyraml.parser
+
 from collections import OrderedDict
+
+import pyraml.parser
+from pyraml.model import Model
+from pyraml.fields import List, String, Reference, Map, Or, Float
 from pyraml.entities import (
-    RamlResource, RamlMethod, RamlQueryParameter, RamlBody)
+    RamlResource, RamlMethod, RamlTrait, RamlBody, RamlResourceType,
+    RamlQueryParameter, RamlRoot, RamlDocumentation)
 
 
-fixtures_dir = os.path.join(os.path.dirname(__file__), '..', 'samples')
+fixtures_dir = os.path.join(os.path.dirname(__file__), 'samples')
+
+
+def test_parse_traits_with_schema():
+    p = pyraml.parser.load(os.path.join(fixtures_dir, 'media-type.yaml'))
+    assert isinstance(p, RamlRoot), RamlRoot
+    assert p.traits, "Property `traits` should be set"
+    assert len(p.traits) == 1, p.traits
+    assert isinstance(p.traits["traitOne"], RamlTrait), p.traits
+    assert isinstance(p.traits["traitOne"].body, RamlBody), p.traits["traitOne"]
+    assert p.traits["traitOne"].body.schema == """{  "$schema": "http://json-schema.org/draft-03/schema",
+   "type": "object",
+   "description": "A product presentation",
+   "properties": {
+     "id":  { "type": "string" },
+     "title":  { "type": "string" }
+   }
+}
+""", p.traits["traitOne"].body.schema
+
+
+def test_parse_raml_with_many_traits():
+    p = pyraml.parser.load(os.path.join(fixtures_dir, 'full-config.yaml'))
+    assert isinstance(p, RamlRoot), RamlRoot
+    assert p.traits, "Property `traits` should be set"
+    assert len(p.traits) == 2, p.traits
+    assert isinstance(p.traits["simple"], RamlTrait), p.traits
+    assert isinstance(p.traits["knotty"], RamlTrait), p.traits
+    assert p.traits["simple"].displayName == "simple trait"
+    assert p.traits["knotty"].displayName == "<<value>> trait"
+
+
+def test_parse_resource_type_with_references_to_traits():
+    p = pyraml.parser.load(os.path.join(fixtures_dir, 'media-type.yaml'))
+    assert isinstance(p, RamlRoot), RamlRoot
+    assert p.resourceTypes, "Property `traits` should be set"
+    assert len(p.resourceTypes)
+
+    assert 'typeParent' in p.resourceTypes, p.resourceTypes
+    assert isinstance(p.resourceTypes['typeParent'], RamlResourceType), p.resourceTypes
+    parent_resource_type = p.resourceTypes['typeParent']
+    assert parent_resource_type.methods, p.resourceTypes['typeParent']
+    assert 'get' in parent_resource_type.methods
+
+    assert 'typeChild' in p.resourceTypes, p.resourceTypes
+    assert isinstance(p.resourceTypes['typeChild'], RamlResourceType), p.resourceTypes
 
 
 def test_resource_nested():
@@ -160,18 +208,123 @@ def test_resource_body():
 
 
 def test_global_media_type():
-    # Test real Github schema gotten from
-    # http://api-portal.anypoint.mulesoft.com/github/api/github-api-v3/github-api-v3.raml
-    #
     # Resource of this schema don't have their own media types but use  global mediaType only.
     # In this test we check than resources have correct media type.
-    p = pyraml.parser.load(os.path.join(fixtures_dir, 'github-api-v3.raml'))
-    assert "/search" in p.resources
-    assert "/repositories" in p.resources["/search"].resources
-    assert "get" in p.resources["/search"].resources["/repositories"].methods
+    p = pyraml.parser.load(os.path.join(fixtures_dir, 'full-config.yaml'))
+    assert "/media" in p.resources
+    assert "/{mediaId}" in p.resources["/media"].resources
+    assert "get" in p.resources["/media"].resources["/{mediaId}"].methods
 
-    entity = p.resources["/search"].resources["/repositories"].methods["get"]
+    entity = p.resources["/media"].resources["/{mediaId}"].methods["get"]
 
     assert 200 in entity.responses
     assert "application/json" in entity.responses[200].body
     assert len(entity.responses[200].body) == 1
+
+
+def test_include_raml():
+    p = pyraml.parser.load(
+        os.path.join(fixtures_dir, 'root-elements-includes.yaml'))
+    assert isinstance(p, RamlRoot), RamlRoot
+    assert p.raml_version == "0.8", p.raml_version
+    assert p.title == "included title", p.title
+    assert p.version == "v1", p.version
+    assert p.baseUri == "https://sample.com/api", p.baseUri
+
+    assert len(p.documentation) == 2, p.documentation
+    assert isinstance(p.documentation[0], RamlDocumentation), p.documentation
+    assert isinstance(p.documentation[1], RamlDocumentation), p.documentation
+
+    assert p.documentation[0].title == "Home", p.documentation[0].title
+    assert p.documentation[0].content == \
+        """Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+eiusmod tempor incididunt ut labore et dolore magna...
+""", p.documentation[0].content
+
+    assert p.documentation[1].title == "Section", p.documentation[0].title
+    assert p.documentation[1].content == "section content", p.documentation[1].content
+
+
+def test_numeric_version():
+    p = pyraml.parser.load(os.path.join(fixtures_dir, 'numeric-api-version.yaml'))
+    assert isinstance(p, RamlRoot), RamlRoot
+    assert p.version == 1, p.version
+
+
+def test_model_structure_inheritance():
+    class Thing(Model):
+        inner = List(String())
+
+    class SubThing(Thing):
+        external = List(String())
+
+    thing = SubThing()
+
+    assert thing._structure.keys() == ['external', 'inner'], thing._structure.keys()
+    assert all(isinstance(a, List) for a in thing._structure.values()), thing._structure.values()
+
+
+def test_model_standard_constructor_without_values():
+    class Thing(Model):
+        inner = String()
+
+    thing = Thing()
+    assert thing.inner is None, thing.inner
+
+
+def test_model_constructor_with_keyword_arguments():
+    class Thing(Model):
+        inner = String()
+
+    thing = Thing(inner="some string")
+    assert thing.inner == "some string", thing.inner
+
+
+def test_model_with_reference():
+    class Thing(Model):
+        title = String()
+
+    class TopThing(Model):
+        things = List(Reference(Thing))
+
+    thing = Thing(title="some string")
+    top_thing = TopThing(things=[thing])
+    assert len(top_thing.things) == 1, top_thing.things
+    assert top_thing.things[0] is thing, top_thing.things
+
+
+def test_model_with_map():
+    class Thing(Model):
+        title = String()
+
+    class MapThing(Model):
+        map = Map(String(), Reference(Thing))
+
+    thing = Thing(title="some string")
+    map_thing = MapThing(map={"t1": thing})
+    assert isinstance(map_thing.map, OrderedDict), map_thing.map
+    assert len(map_thing.map) == 1, map_thing.map
+    assert map_thing.map["t1"] is thing, map_thing.map
+
+
+def test_model_with_reference_and_aliased_field():
+    class Thing(Model):
+        id_ = String(field_name='id')
+
+    class RefThing(Model):
+        ref = Reference(Thing)
+
+    res = RefThing.ref.to_python({"id": "some field"})
+    assert isinstance(res, Thing), res
+    assert res.id_ == "some field", res
+
+
+def test_model_with_or_successfully():
+    class Thing(Model):
+        a = Or(String(), Float())
+
+    res = Thing.a.to_python("a")
+    assert res == "a", res
+
+    res = Thing.a.to_python(1.1)
+    assert res == 1.1, res

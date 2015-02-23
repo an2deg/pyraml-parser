@@ -1,0 +1,13 @@
+#%RAML 0.8
+---
+title: Leagues API
+version: v1
+baseUri: http://localhost/api
+/leagues:
+    displayName: Leagues
+    get:
+        responses:
+            200:
+                body:
+                    application/json: !!null
+                    text/xml: !!null

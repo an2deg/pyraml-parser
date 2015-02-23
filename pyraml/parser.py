@@ -9,12 +9,13 @@ import yaml
 from collections import OrderedDict
 
 from raml_elements import ParserRamlInclude
-from fields import String, Reference
+from fields import String, Reference, List
 from entities import (
     RamlRoot, RamlResource, RamlMethod, RamlBody,
     RamlResourceType, RamlTrait, RamlQueryParameter)
 from constants import RAML_SUPPORTED_FORMAT_VERSION, RAML_CONTENT_MIME_TYPES
 import bootstrap
+
 
 __all__ = ["RamlException", "RamlNotFoundException", "RamlParseException",
            "ParseContext", "load", "parse"]
@@ -122,6 +123,18 @@ def load(uri):
     return parse(c, relative_path)
 
 
+def parse_protocols(root_ctx, base_uri=None):
+    """ Parse ``protocols`` from a root context.
+
+    If protocols are not provided in root, use baseUri protocol.
+    """
+    protocols = root_ctx.get_property_with_schema(
+        'protocols', RamlRoot.protocols)
+    if protocols is None and base_uri is not None:
+        protocols = [urllib2.splittype(base_uri)[0].upper()]
+    return protocols
+
+
 def parse(c, relative_path):
     """
     Parse RAML file
@@ -141,8 +154,12 @@ def parse(c, relative_path):
     root.title = context.get_string_property('title', True)
 
     root.baseUri = context.get_string_property('baseUri')
+    root.protocols = parse_protocols(context, root.baseUri)
+
     root.version = context.get('version')
     root.mediaType = context.get_string_property('mediaType')
+    root.schemas = context.get_property_with_schema(
+        'schemas', RamlRoot.schemas)
 
     root.documentation = context.get_property_with_schema(
         'documentation', RamlRoot.documentation)
@@ -406,7 +423,6 @@ def parse_body(c, global_media_type):
     :return: RamlBody or None
     :rtype: RamlBody
     """
-
     if c.data is None:
         return None
 
@@ -538,7 +554,7 @@ def _load_local_file(full_path):
     if not os.path.exists(full_path):
         raise RamlNotFoundException("No such file {} found".format(full_path))
 
-    # detect file type... we should able to parse raml, yaml, json, xml and read
+    # Detect file type... we should able to parse raml, yaml, json, xml and read
     # all other content types as plain files
     mime_type = mimetypes.guess_type(full_path)[0]
     if mime_type is None:
@@ -554,28 +570,3 @@ def _load_network_resource(url):
         # of specs it MUST support RAML mime
         mime_type = f.headers.gettype()
         return f.read(), mime_type
-
-
-def _parse_raml_version(content):
-    """
-    Get optional property `version` and make sure that it is a string.
-    If the property does not exist the function returns None
-
-    :return: string - property value or None
-    :rtype : basestring or None
-    """
-
-    property_value = content.get('version')
-    if not property_value:
-        return None
-
-    # version should be string but if version specified as "0.1" yaml package
-    # recognized it as float, so we should handle this situation
-    if not (isinstance(property_value, (basestring, float)) or
-            isinstance(property_value, (basestring, int))):
-        raise RamlParseException("Property `version` must be string")
-
-    if isinstance(property_value, float) or isinstance(property_value, int):
-        property_value = str(property_value)
-
-    return property_value
