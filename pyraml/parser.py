@@ -13,7 +13,9 @@ from fields import String, Reference, List
 from entities import (
     RamlRoot, RamlResource, RamlMethod, RamlBody,
     RamlResourceType, RamlTrait, RamlQueryParameter)
-from constants import RAML_SUPPORTED_FORMAT_VERSION, RAML_CONTENT_MIME_TYPES
+from constants import (
+    RAML_SUPPORTED_FORMAT_VERSION, RAML_CONTENT_MIME_TYPES,
+    RAML_VALID_PROTOCOLS)
 import bootstrap
 
 
@@ -123,15 +125,17 @@ def load(uri):
     return parse(c, relative_path)
 
 
-def parse_protocols(root_ctx, base_uri=None):
+def parse_protocols(ctx, base_uri=None):
     """ Parse ``protocols`` from a root context.
 
     If protocols are not provided in root, use baseUri protocol.
     """
-    protocols = root_ctx.get_property_with_schema(
+    protocols = ctx.get_property_with_schema(
         'protocols', RamlRoot.protocols)
     if protocols is None and base_uri is not None:
-        protocols = [urllib2.splittype(base_uri)[0].upper()]
+        protocols = [urllib2.splittype(base_uri)[0]]
+    if protocols:
+        protocols = [p.upper() for p in protocols]
     return protocols
 
 
@@ -160,6 +164,8 @@ def parse(c, relative_path):
     root.mediaType = context.get_string_property('mediaType')
     root.schemas = context.get_property_with_schema(
         'schemas', RamlRoot.schemas)
+    root.baseUriParameters = context.get_property_with_schema(
+        "baseUriParameters", RamlRoot.baseUriParameters)
 
     root.documentation = context.get_property_with_schema(
         'documentation', RamlRoot.documentation)

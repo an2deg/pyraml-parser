@@ -158,3 +158,4 @@ class RamlRoot(Model):
     resourceTypes = Map(String(), Reference(RamlResourceType))
     schemas = List(Reference(RamlSchema))
     protocols = List(String())
+    baseUriParameters = Map(String(), Reference(RamlQueryParameter))
