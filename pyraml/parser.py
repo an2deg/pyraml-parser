@@ -146,7 +146,10 @@ def parse(c, relative_path):
 
     root.documentation = context.get_property_with_schema(
         'documentation', RamlRoot.documentation)
-    root.traits = parse_traits(context, RamlRoot.traits.field_name, root.mediaType)
+    root.traits = parse_traits(
+        context,
+        RamlRoot.traits.field_name,
+        root.mediaType)
     root.resourceTypes = parse_resource_type(context)
 
     resources = OrderedDict()
@@ -409,8 +412,10 @@ def parse_body(c, global_media_type):
 
     body = RamlBody()
     body.example = c.get_string_property("example")
-    body.body = parse_inline_body(c.get("body"), c.relative_path, global_media_type)
-
+    body.body = parse_inline_body(
+        c.get("body"),
+        c.relative_path,
+        global_media_type)
     body.schema = c.get_string_property("schema")
     body.example = c.get_string_property("example")
     body.formParameters = c.get_property_with_schema(
