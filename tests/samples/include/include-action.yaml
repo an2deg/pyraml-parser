@@ -1,7 +1,7 @@
 #%RAML 0.8
 ---
 title: Sample API
-baseUri: https://{host}.sample.com
+baseUri: https://{host}.sample.com:{port}
 baseUriParameters:
     host:
         displayName: Host

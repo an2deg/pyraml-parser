@@ -29,7 +29,7 @@ class RootParseTestCase(SampleParseTestCase):
         self.assertTrue(hasattr(data, 'traits'))
         self.assertTrue(hasattr(data, 'resources'))
         self.assertTrue(hasattr(data, 'baseUriParameters'))
-        self.assertTrue(hasattr(data, 'securitySchemes'))
+        # self.assertTrue(hasattr(data, 'securitySchemes'))
 
     def test_root_baseuriparameters_parsed(self):
         data = self.load('full-config.yaml')
@@ -114,32 +114,6 @@ class InclusionTestCase(SampleParseTestCase):
         self.assertEqual(docs[1].title, 'Section')
         self.assertEqual(docs[1].content, 'section content')
 
-    def test_include_resource_method_params(self):
-        data = self.load('include', 'include-action.yaml')
-        self.assertEqual(
-            data.resources['/simple'].methods['get'].description,
-            'get something')
-
-    @patch('pyraml.parser._load_network_resource')
-    def test_include_non_root_value_only_http(self, mock_load):
-        mock_load.return_value = ('http inclusion data', 'text/plain')
-        data = self.load('include', 'include-http-non-yaml.yaml')
-        self.assertEqual(data.documentation[0].title, 'Home')
-        self.assertEqual(
-            data.documentation[0].content,
-            'http inclusion data')
-        mock_load.assert_called_once_with(
-            'https://raw.github.com/mulesoft/mule/mule-3.x/README.md')
-
-    def test_include_sequence_item(self):
-        data = self.load('include', 'include-sequence-item.yaml')
-        self.assertEqual(len(data.resourceTypes), 1)
-        self.assertEqual(
-            data.resourceTypes['simple'].methods['get'].description,
-            'super')
-        self.assertEqual(data.documentation[0].title, 'section')
-        self.assertEqual(data.documentation[0].content, 'section content')
-
     def test_include_resource_type_sequence(self):
         data = self.load('include', 'include-resource-type-sequence.yaml')
         self.assertEqual(len(data.resourceTypes), 2)
@@ -153,8 +127,41 @@ class InclusionTestCase(SampleParseTestCase):
         self.assertIsNone(data.resourceTypes['complex'].methods['post'].notNull)
         self.assertTrue(data.resourceTypes['complex'].methods['put'].notNull)
 
-    def test_include_named_parameter_value(self):
+    def test_include_sequence_item(self):
+        data = self.load('include', 'include-sequence-item.yaml')
+        self.assertEqual(len(data.resourceTypes), 1)
+        self.assertEqual(
+            data.resourceTypes['simple'].methods['get'].description,
+            'super')
+        self.assertEqual(data.documentation[0].title, 'section')
+        self.assertEqual(data.documentation[0].content, 'section content')
+
+    def test_include_resource_method_params(self):
+        data = self.load('include', 'include-action.yaml')
+        self.assertEqual(
+            data.resources['/simple'].methods['get'].description,
+            'get something')
+
+    def test_include_txt_named_parameter_value(self):
         data = self.load('include', 'include-action.yaml')
         self.assertEqual(
             data.baseUriParameters['host'].description,
             'included title')
+
+    def test_multi_level_inclusion(self):
+        data = self.load('multi-level-inclusion.yaml')
+        docs = data.documentation
+        self.assertEqual(len(docs), 1)
+        self.assertEqual(docs[0].title, 'Section')
+        self.assertEqual(docs[0].content, 'included title')
+
+    @patch('pyraml.parser._load_network_resource')
+    def test_include_non_root_value_only_http(self, mock_load):
+        mock_load.return_value = ('http inclusion data', 'text/plain')
+        data = self.load('include', 'include-http-non-yaml.yaml')
+        self.assertEqual(data.documentation[0].title, 'Home')
+        self.assertEqual(
+            data.documentation[0].content,
+            'http inclusion data')
+        mock_load.assert_called_once_with(
+            'https://raw.github.com/mulesoft/mule/mule-3.x/README.md')

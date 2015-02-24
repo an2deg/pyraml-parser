@@ -6,5 +6,7 @@ resourceTypes:
     - !include resource-type.yaml
 documentation:
     - !include documentation-sequence-item.yaml
+    - title: foo
+      content: bar
 /simple:
     type: simple

@@ -41,6 +41,39 @@ class ParseContext(object):
         self.data = data
         self.relative_path = relative_path
 
+    def _handle_load(self, data):
+        """ Handle loading of included resources from ``data``.
+
+        ``data`` can be of type:
+            ParserRamlInclude:
+                YAML/RAML resource: load its resources recursively
+                Any other type: return value as a string
+            dict: load values
+            list: load items
+
+        Otherwise return value as is.
+        """
+        if isinstance(data, ParserRamlInclude):
+            file_content, file_type = self._load_resource(data.file_name)
+            if _is_mime_type_raml(file_type):
+                new_relative_path = _calculate_new_relative_path(
+                    self.relative_path, data.file_name)
+                _included_ctx = ParseContext(
+                    yaml.load(file_content),
+                    new_relative_path)
+                return _included_ctx._handle_load(_included_ctx.data)
+            return file_content
+        if isinstance(data, dict):
+            for key, val in data.items():
+                data[key] = self._handle_load(val)
+            return data
+        if isinstance(data, list):
+            return [self._handle_load(x) for x in data]
+        return data
+
+    def preload_included_resources(self):
+        self.data = self._handle_load(self.data)
+
     def get(self, property_name):
         """
         Extract property with name `property_name` from context
@@ -55,19 +88,7 @@ class ParseContext(object):
         # Handle special case with null object
         if self.data is None:
             return None
-
         property_value = self.data.get(property_name)
-        if isinstance(property_value, ParserRamlInclude):
-            _property_value, file_type = self._load_include(
-                property_value.file_name)
-            if _is_mime_type_raml(file_type):
-                relative_path = _calculate_new_relative_path(
-                    self.relative_path,
-                    property_value.file_name)
-                property_value = ParseContext(
-                    yaml.load(_property_value), relative_path)
-            else:
-                property_value = _property_value
         return property_value
 
     def __iter__(self):
@@ -77,14 +98,13 @@ class ParseContext(object):
         property_value = self.get_property_with_schema(
             property_name,
             String(required=required))
-
         return property_value
 
     def get_property_with_schema(self, property_name, property_schema):
         property_value = self.get(property_name)
         return property_schema.to_python(property_value)
 
-    def _load_include(self, file_name):
+    def _load_resource(self, file_name):
         """
         Load RAML include from file_name.
         :param file_name: name of file to include
@@ -93,13 +113,17 @@ class ParseContext(object):
         :return: 2 elements tuple: file content and file type
         :rtype: str,str
         """
-
-        if not _is_network_resource(self.relative_path):
-            full_path = os.path.join(self.relative_path, file_name)
-            return _load_local_file(full_path)
-        else:
+        # Filename is a complete URI (http://example.com/foo.raml)
+        if _is_network_resource(file_name):
+            return _load_network_resource(file_name)
+        # Filename relative to self network path
+        elif _is_network_resource(self.relative_path):
             url = urlparse.urljoin(self.relative_path, file_name)
             return _load_network_resource(url)
+        # Filename relative to self filename path
+        else:
+            full_path = os.path.join(self.relative_path, file_name)
+            return _load_local_file(full_path)
 
 
 def load(uri):
@@ -152,6 +176,7 @@ def parse(c, relative_path):
     raml_version = _validate_raml_header(first_line)
 
     context = ParseContext(yaml.load(c), relative_path)
+    context.preload_included_resources()
 
     root = RamlRoot(raml_version=raml_version)
     root.title = context.get_string_property('title', True)
@@ -273,7 +298,8 @@ def parse_resource_type(ctx):
 
         rtype_obj = RamlResourceType()
         rtype_obj.type = rtype_ctx.get_string_property("type")
-        rtype_obj.is_ = rtype_ctx.get_property_with_schema("is", RamlResourceType.is_)
+        rtype_obj.is_ = rtype_ctx.get_property_with_schema(
+            "is", RamlResourceType.is_)
 
         # Parse methods
         methods = OrderedDict()
@@ -363,7 +389,8 @@ def parse_traits(c, property_name, global_media_type):
 
     traits = {}
 
-    # We got list of dict from c.get(property_name) so we need to iterate over it
+    # We got list of dict from c.get(property_name) so we need to iterate
+    # over it
     for trait_raw_value in property_value:
         traits_context = ParseContext(trait_raw_value, c.relative_path)
 
@@ -376,9 +403,9 @@ def parse_traits(c, property_name, global_media_type):
             for field_name, field_class in RamlTrait._structure.iteritems():
                 # parse string fields
                 if isinstance(field_class, String):
-                    setattr(trait,
-                            field_name,
-                            new_context.get_string_property(field_class.field_name))
+                    _new_value = new_context.get_string_property(
+                        field_class.field_name)
+                    setattr(trait, field_name, _new_value)
             trait.queryParameters = c.get_property_with_schema(
                 RamlTrait.queryParameters.field_name,
                 RamlTrait.queryParameters)
