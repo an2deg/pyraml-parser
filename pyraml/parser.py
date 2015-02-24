@@ -235,6 +235,10 @@ def parse_resource(c, property_name, parent_object, global_media_type):
     new_context = ParseContext(property_value, c.relative_path)
     resource.description = new_context.get_string_property("description")
     resource.displayName = new_context.get_string_property("displayName")
+    resource.uriParameters = new_context.get_property_with_schema(
+        "uriParameters", RamlResource.uriParameters)
+    resource.baseUriParameters = new_context.get_property_with_schema(
+        "baseUriParameters", RamlResource.baseUriParameters)
 
     if isinstance(parent_object, RamlResource):
         resource.parentResource = parent_object
@@ -344,6 +348,8 @@ def parse_method(ctx, global_media_type):
     method.description = ctx.get_string_property("description")
     method.body = parse_inline_body(
         ctx.get("body"), ctx.relative_path, global_media_type)
+    method.baseUriParameters = ctx.get_property_with_schema(
+        "baseUriParameters", RamlMethod.baseUriParameters)
 
     parsed_responses = parse_inline_body(
         ctx.get("responses"), ctx.relative_path, global_media_type)

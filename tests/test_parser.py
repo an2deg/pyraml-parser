@@ -94,6 +94,7 @@ class RootParseTestCase(SampleParseTestCase):
 
 
 class InclusionTestCase(SampleParseTestCase):
+    """Test various cases of using !include."""
 
     def test_include_root_value(self):
         """ Test root value inclusion via !include.
@@ -173,3 +174,45 @@ class InclusionTestCase(SampleParseTestCase):
         responses = data.resources['/me'].methods['get'].responses[200]
         json_response = responses.body['application/json']
         self.assertEqual(json_response.example, '{"foo": "bar"}')
+
+
+class ResourceParseTestCase(SampleParseTestCase):
+
+    def test_name_desc_parsed(self):
+        data = self.load('full-config.yaml')
+        self.assertEqual(len(data.resources), 3)
+        self.assertListEqual(data.resources.keys(), ['/', '/tags', '/media'])
+        self.assertEqual(data.resources['/'].displayName, 'Root resource')
+        self.assertEqual(
+            data.resources['/'].description,
+            'Root resource description')
+        mediaIdResource = data.resources['/media'].resources['/{mediaId}']
+        self.assertEqual(mediaIdResource.displayName, 'Media item')
+        self.assertIsNone(mediaIdResource.description)
+
+    def test_resource_uriparameters_parsed(self):
+        data = self.load('full-config.yaml')
+        mediaIdResource = data.resources['/media'].resources['/{mediaId}']
+        self.assertEqual(len(mediaIdResource.uriParameters), 1)
+        mediaIdParam = mediaIdResource.uriParameters['mediaId']
+        self.assertEqual(mediaIdParam.type, 'string')
+        self.assertEqual(mediaIdParam.maxLength, 10)
+        self.assertIsNone(mediaIdParam.minLength)
+
+    def test_method_uriparameters_parsed(self):
+        data = self.load('full-config.yaml')
+        head = data.resources['/media'].methods['head']
+        self.assertEqual(len(head.baseUriParameters), 1)
+        host = head.baseUriParameters['host']
+        self.assertEqual(host.enum, ['api2'])
+        self.assertIsNone(host.description)
+
+    def test_baseuriparameters_parsed(self):
+        data = self.load('full-config.yaml')
+        mediaResource = data.resources['/media']
+        self.assertEqual(len(mediaResource.baseUriParameters), 1)
+        host = mediaResource.baseUriParameters['host']
+        self.assertEqual(host.enum, ['api1'])
+        self.assertIsNone(host.description)
+        self.assertIsNone(host.displayName)
+        self.assertIsNone(host.pattern)

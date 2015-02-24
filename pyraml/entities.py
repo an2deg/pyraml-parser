@@ -132,6 +132,7 @@ class RamlMethod(Model):
     body = Map(String(), Reference(RamlBody))
     responses = Map(Int(), Reference(RamlBody))
     queryParameters = Map(String(), Reference(RamlQueryParameter))
+    baseUriParameters = Map(String(), Reference(RamlQueryParameter))
 
 
 class RamlResource(Model):
@@ -143,6 +144,8 @@ class RamlResource(Model):
     parentResource = Reference("pyraml.entities.RamlResource")
     methods = Map(String(), Reference(RamlBody))
     resources = Map(String(), Reference("pyraml.entities.RamlResource"))
+    uriParameters = Map(String(), Reference(RamlQueryParameter))
+    baseUriParameters = Map(String(), Reference(RamlQueryParameter))
 
 
 class RamlRoot(Model):
