@@ -26,7 +26,7 @@ class RamlSchema(Model):
         return super(RamlSchema, self).from_json(data)
 
 
-class RamlQueryParameter(Model):
+class RamlNamedParameters(Model):
     name = String()
     description = String()
     example = Or(String(), Int(), Float())
@@ -43,6 +43,11 @@ class RamlQueryParameter(Model):
     maximum = Or(Int(), Float())
 
 
+class RamlQueryParameter(RamlNamedParameters):
+    """ Kept for compatibility reasons. """
+    pass
+
+
 class RamlHeader(Model):
     type = String()
     required = Bool()
@@ -54,8 +59,8 @@ class RamlBody(Model):
     notNull = Bool()
     formParameters = Map(
         String(),
-        Or(Reference(RamlQueryParameter),
-           List(Reference(RamlQueryParameter)))
+        Or(Reference(RamlNamedParameters),
+           List(Reference(RamlNamedParameters)))
     )
     headers = Map(String(), Reference(RamlHeader))
     body = Map(String(), Reference("pyraml.entities.RamlBody"))
@@ -91,7 +96,7 @@ class RamlTrait(Model):
     displayName = String()
     responses = Map(Int(), Reference(RamlResponse))
     method = String()
-    queryParameters = Map(String(), Reference(RamlQueryParameter))
+    queryParameters = Map(String(), Reference(RamlNamedParameters))
     body = Reference(RamlBody)
     # Reference to another RamlTrait
     is_ = List(String(), field_name="is")
@@ -104,35 +109,14 @@ class RamlResourceType(Model):
 
 
 class RamlMethod(Model):
-    """
-    Example:
-        get:
-            description: ...
-            headers:
-                ....
-            queryParameters:
-                ...
-            body:
-                text/xml: !!null
-                application/json:
-                    schema: |
-                        {
-                            ....
-                        }
-            responses:
-                200:
-                    ....
-                <<:
-                    404:
-                        description: not found
-
-    """
     notNull = Bool()
     description = String()
     body = Map(String(), Reference(RamlBody))
     responses = Map(Int(), Reference(RamlBody))
-    queryParameters = Map(String(), Reference(RamlQueryParameter))
-    baseUriParameters = Map(String(), Reference(RamlQueryParameter))
+    queryParameters = Map(String(), Reference(RamlNamedParameters))
+    baseUriParameters = Map(String(), Reference(RamlNamedParameters))
+    headers = Map(String(), Reference(RamlNamedParameters))
+    protocols = List(String())
 
 
 class RamlResource(Model):
@@ -144,8 +128,8 @@ class RamlResource(Model):
     parentResource = Reference("pyraml.entities.RamlResource")
     methods = Map(String(), Reference(RamlBody))
     resources = Map(String(), Reference("pyraml.entities.RamlResource"))
-    uriParameters = Map(String(), Reference(RamlQueryParameter))
-    baseUriParameters = Map(String(), Reference(RamlQueryParameter))
+    uriParameters = Map(String(), Reference(RamlNamedParameters))
+    baseUriParameters = Map(String(), Reference(RamlNamedParameters))
 
 
 class RamlRoot(Model):
@@ -160,5 +144,4 @@ class RamlRoot(Model):
     resources = Map(String(), Reference(RamlResource))
     resourceTypes = Map(String(), Reference(RamlResourceType))
     schemas = List(Reference(RamlSchema))
-    protocols = List(String())
-    baseUriParameters = Map(String(), Reference(RamlQueryParameter))
+    baseUriParameters = Map(String(), Reference(RamlNamedParameters))

@@ -12,7 +12,7 @@ from raml_elements import ParserRamlInclude
 from fields import String, Reference, List
 from entities import (
     RamlRoot, RamlResource, RamlMethod, RamlBody,
-    RamlResourceType, RamlTrait, RamlQueryParameter)
+    RamlResourceType, RamlTrait, RamlNamedParameters)
 from constants import (
     RAML_SUPPORTED_FORMAT_VERSION, RAML_CONTENT_MIME_TYPES,
     RAML_VALID_PROTOCOLS)
@@ -350,6 +350,10 @@ def parse_method(ctx, global_media_type):
         ctx.get("body"), ctx.relative_path, global_media_type)
     method.baseUriParameters = ctx.get_property_with_schema(
         "baseUriParameters", RamlMethod.baseUriParameters)
+    method.headers = ctx.get_property_with_schema(
+        "headers", RamlMethod.headers)
+    method.protocols = ctx.get_property_with_schema(
+        "protocols", RamlMethod.protocols)
 
     parsed_responses = parse_inline_body(
         ctx.get("responses"), ctx.relative_path, global_media_type)

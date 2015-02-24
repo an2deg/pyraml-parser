@@ -199,15 +199,7 @@ class ResourceParseTestCase(SampleParseTestCase):
         self.assertEqual(mediaIdParam.maxLength, 10)
         self.assertIsNone(mediaIdParam.minLength)
 
-    def test_method_uriparameters_parsed(self):
-        data = self.load('full-config.yaml')
-        head = data.resources['/media'].methods['head']
-        self.assertEqual(len(head.baseUriParameters), 1)
-        host = head.baseUriParameters['host']
-        self.assertEqual(host.enum, ['api2'])
-        self.assertIsNone(host.description)
-
-    def test_baseuriparameters_parsed(self):
+    def test_resource_baseuriparameters_parsed(self):
         data = self.load('full-config.yaml')
         mediaResource = data.resources['/media']
         self.assertEqual(len(mediaResource.baseUriParameters), 1)
@@ -216,3 +208,75 @@ class ResourceParseTestCase(SampleParseTestCase):
         self.assertIsNone(host.description)
         self.assertIsNone(host.displayName)
         self.assertIsNone(host.pattern)
+
+    def test_method_uriparameters_parsed(self):
+        data = self.load('full-config.yaml')
+        head = data.resources['/media'].methods['head']
+        self.assertEqual(len(head.baseUriParameters), 1)
+        host = head.baseUriParameters['host']
+        self.assertEqual(host.enum, ['api2'])
+        self.assertIsNone(host.description)
+
+    def test_method_description_parsed(self):
+        data = self.load('full-config.yaml')
+        get = data.resources['/media'].methods['get']
+        self.assertEqual(get.description, 'retrieve media')
+        head = data.resources['/media'].methods['head']
+        self.assertIsNone(head.description)
+
+    def test_method_headers_parsed(self):
+        data = self.load('full-config.yaml')
+        headers = data.resources['/media'].methods['get'].headers
+        self.assertEqual(len(headers), 1)
+        apikey = headers['Zencoder-Api-Key']
+        self.assertEqual(apikey.displayName, 'Api key')
+        self.assertEqual(apikey.description, 'Api key description')
+        self.assertEqual(apikey.type, 'string')
+        self.assertTrue(apikey.required)
+        self.assertEqual(apikey.minLength, 10)
+        self.assertEqual(apikey.maxLength, 10)
+        self.assertEqual(apikey.example, '0123456789')
+
+    def test_method_headers_not_provided(self):
+        data = self.load('full-config.yaml')
+        headers = data.resources['/media'].methods['head'].headers
+        self.assertIsNone(headers)
+
+    def test_method_protocols_parsed(self):
+        data = self.load('full-config.yaml')
+        head = data.resources['/'].methods['head']
+        self.assertListEqual(head.protocols, ['HTTP'])
+
+    def test_method_protocols_not_provided(self):
+        data = self.load('full-config.yaml')
+        head = data.resources['/media'].methods['head']
+        self.assertIsNone(head.protocols)
+
+    def test_method_queryparameters_parsed(self):
+        data = self.load('full-config.yaml')
+        params = data.resources['/media'].methods['get'].queryParameters
+        self.assertEqual(len(params), 2)
+        self.assertEqual(params['page'].displayName, 'Page')
+        self.assertEqual(params['page'].type, 'integer')
+        self.assertEqual(params['page'].default, 1)
+        self.assertEqual(params['page'].minimum, 1)
+        self.assertIsNone(params['page'].example)
+        self.assertEqual(params['offset'].displayName, 'Offset')
+        self.assertEqual(params['offset'].description, 'Offset value')
+        self.assertEqual(params['offset'].type, 'integer')
+        self.assertEqual(params['offset'].minimum, 0)
+        self.assertEqual(params['offset'].example, 2)
+        self.assertIsNone(params['offset'].required)
+
+    def test_nested_resource_method_queryparameters_parsed(self):
+        data = self.load('full-config.yaml')
+        resource = data.resources['/media'].resources['/{mediaId}']
+        params = resource.methods['get'].queryParameters
+        self.assertEqual(len(params), 1)
+        self.assertEqual(params['length'].displayName, 'length')
+        self.assertEqual(params['length'].type, 'integer')
+
+    def test_method_queryparameters_not_provided(self):
+        data = self.load('full-config.yaml')
+        params = data.resources['/media'].methods['head'].queryParameters
+        self.assertIsNone(params)

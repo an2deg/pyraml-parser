@@ -7,7 +7,7 @@ from pyraml.model import Model
 from pyraml.fields import List, String, Reference, Map, Or, Float
 from pyraml.entities import (
     RamlResource, RamlMethod, RamlTrait, RamlBody, RamlResourceType,
-    RamlQueryParameter, RamlRoot, RamlDocumentation)
+    RamlNamedParameters, RamlRoot, RamlDocumentation)
 
 
 fixtures_dir = os.path.join(os.path.dirname(__file__), 'samples')
@@ -145,7 +145,7 @@ def test_resource_with_params():
     assert "default-enum" in queryParameters, queryParameters
 
     queryParam1 = queryParameters["name"]
-    assert isinstance(queryParam1, RamlQueryParameter), queryParam1
+    assert isinstance(queryParam1, RamlNamedParameters), queryParam1
     assert queryParam1.example == "two", queryParam1
     assert queryParam1.enum == ["one", "two", "three"], queryParam1
     assert queryParam1.displayName == "name name", queryParam1

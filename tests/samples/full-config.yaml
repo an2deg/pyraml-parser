@@ -139,7 +139,7 @@ traits:
     get:
         description: retrieve media
         headers:
-            api-key:
+            Zencoder-Api-Key:
                 displayName: Api key
                 description: Api key description
                 type: string
@@ -149,9 +149,16 @@ traits:
                 example: 0123456789
         queryParameters:
             page:
+                displayName: Page
                 type: integer
                 default: 1
                 minimum: 1
+            offset:
+                displayName: Offset
+                description: Offset value
+                type: integer
+                minimum: 0
+                example: 2
         body:
             text/xml: !!null
             application/json:
@@ -209,6 +216,10 @@ traits:
                 maxLength: 10
         head: !!null
         get:
+            queryParameters:
+                length:
+                    displayName: length
+                    type: integer
             responses:
                 200:
                     body:
