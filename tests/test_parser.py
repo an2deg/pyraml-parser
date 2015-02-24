@@ -165,3 +165,11 @@ class InclusionTestCase(SampleParseTestCase):
             'http inclusion data')
         mock_load.assert_called_once_with(
             'https://raw.github.com/mulesoft/mule/mule-3.x/README.md')
+
+    def test_regression_include_body_example_json(self):
+        """ https://github.com/an2deg/pyraml-parser/issues/4
+        """
+        data = self.load('include-body-example-json.yaml')
+        responses = data.resources['/me'].methods['get'].responses[200]
+        json_response = responses.body['application/json']
+        self.assertEqual(json_response.example, '{"foo": "bar"}')
