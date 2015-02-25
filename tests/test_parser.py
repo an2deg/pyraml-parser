@@ -333,3 +333,35 @@ class ResourceParseTestCase(SampleParseTestCase):
         form4 = formParams['form-4']
         self.assertEqual(form4.type, 'boolean')
         self.assertTrue(form4.required)
+
+    def test_method_responses_desc_body_parsed(self):
+        data = self.load('full-config.yaml')
+        responses = data.resources['/media'].methods['get'].responses
+        self.assertEqual(len(responses), 2)
+        self.assertEqual(
+            responses[200].description, 'regular success response')
+        self.assertEqual(responses[200].example, '{ "key2": "value2" }')
+        self.assertEqual(responses[200].schema, 'league-json')
+        self.assertEqual(len(responses[200].body), 1)
+        self.assertEqual(
+            responses[200].body['application/json'].example,
+            '{ "key": "value" }')
+        self.assertEqual(
+            responses[200].body['application/json'].schema,
+            'league-json')
+        self.assertEqual(
+            responses[400].body['text/xml'].example,
+            '<root>none</root>')
+        self.assertTrue(responses[400].body['text/plain'].notNull)
+
+    def test_method_responses_headers_parsed(self):
+        data = self.load('full-config.yaml')
+        responses = data.resources['/media'].methods['get'].responses
+        headers = responses[200].headers
+        self.assertEqual(len(headers), 2)
+        self.assertEqual(headers['one'].type, 'string')
+        self.assertTrue(headers['one'].required)
+        self.assertIsNone(headers['one'].maxLength)
+        self.assertEqual(headers['two'].type, 'integer')
+        self.assertIsNone(headers['two'].maxLength)
+        self.assertIsNone(headers['two'].required)

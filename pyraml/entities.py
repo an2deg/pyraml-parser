@@ -48,9 +48,9 @@ class RamlQueryParameter(RamlNamedParameters):
     pass
 
 
-class RamlHeader(Model):
-    type = String()
-    required = Bool()
+class RamlHeader(RamlNamedParameters):
+    """ Kept for compatibility reasons. """
+    pass
 
 
 class RamlBody(Model):
@@ -62,7 +62,6 @@ class RamlBody(Model):
         Or(Reference(RamlNamedParameters),
            List(Reference(RamlNamedParameters)))
     )
-    headers = Map(String(), Reference(RamlHeader))
     body = Map(String(), Reference("pyraml.entities.RamlBody"))
     is_ = List(String(), field_name="is")
 
@@ -72,8 +71,15 @@ class RamlResponse(Model):
     example = String()
     notNull = Bool()
     description = String()
-    headers = Map(String(), Reference(RamlHeader))
-    body = Reference("pyraml.entities.RamlBody")
+    headers = Map(String(), Reference(RamlNamedParameters))
+    body = Map(String(), Reference("pyraml.entities.RamlBody"))
+
+    @classmethod
+    def from_json(self, json_object):
+        for content_type, props in json_object['body'].items():
+            if props is None:
+                json_object['body'][content_type] = {'notNull': True}
+        return super(RamlResponse, self).from_json(json_object)
 
 
 class RamlTrait(Model):
@@ -112,7 +118,7 @@ class RamlMethod(Model):
     notNull = Bool()
     description = String()
     body = Map(String(), Reference(RamlBody))
-    responses = Map(Int(), Reference(RamlBody))
+    responses = Map(Int(), Reference(RamlResponse))
     queryParameters = Map(String(), Reference(RamlNamedParameters))
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
     headers = Map(String(), Reference(RamlNamedParameters))

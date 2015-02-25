@@ -354,29 +354,10 @@ def parse_method(ctx, global_media_type):
         "headers", RamlMethod.headers)
     method.protocols = ctx.get_property_with_schema(
         "protocols", RamlMethod.protocols)
-
-    parsed_responses = parse_inline_body(
-        ctx.get("responses"), ctx.relative_path, global_media_type)
-    if parsed_responses:
-        new_parsed_responses = OrderedDict()
-        for resp_code, parsed_data in parsed_responses.iteritems():
-            if resp_code == "<<":
-                # Check for default code (equivalent of wildcard "*")
-                new_parsed_responses.setdefault(parsed_data)
-            else:
-                # Otherwise response code should be numeric HTTP response code
-                try:
-                    resp_code = int(resp_code)
-                except ValueError:
-                    raise RamlParseException(
-                        "Expected numeric HTTP response code in responses "
-                        "but got {!r}".format(resp_code))
-                new_parsed_responses[resp_code] = parsed_data
-        method.responses = new_parsed_responses
-
+    method.responses = ctx.get_property_with_schema(
+        "responses", RamlMethod.responses)
     method.queryParameters = ctx.get_property_with_schema(
         "queryParameters", RamlMethod.queryParameters)
-
     return method
 
 
@@ -483,7 +464,6 @@ def parse_body(c, global_media_type):
     body.example = c.get_string_property("example")
     body.formParameters = c.get_property_with_schema(
         "formParameters", RamlBody.formParameters)
-    body.headers = c.get_property_with_schema("headers", RamlBody.headers)
 
     return body
 

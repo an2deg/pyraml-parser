@@ -24,8 +24,8 @@ resourceTypes:
                 200:
                     description: success
                     body:
-                        example: |
-                            {"hello": "world"}
+                        application/json:
+                            example: '{ "hello": "world" }'
         post:
             is: [traitOne]
       typeChild:

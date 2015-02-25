@@ -203,6 +203,9 @@ traits:
                         required: true
         responses:
             200:
+                description: regular success response
+                example: '{ "key2": "value2" }'
+                schema: league-json
                 headers:
                     one:
                         type: string
@@ -212,14 +215,12 @@ traits:
                 body:
                     application/json:
                         example: '{ "key": "value" }'
+                        schema: league-json
             400:
                 body:
                     text/xml:
                         example: '<root>none</root>'
                     text/plain: !!null
-            <<:
-                404:
-                    description: not found
     /{mediaId}:
         displayName: Media item
         uriParameters:
@@ -235,7 +236,8 @@ traits:
             responses:
                 200:
                     body:
-                        example: "Foo"
+                        application/json:
+                            example: '{ "Foo": "Bar" }'
 
 /tags:
     head: !!null
