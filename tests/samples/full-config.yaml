@@ -124,6 +124,10 @@ traits:
                 value: mingled
         protocols: [HTTP]
         securedBy: [oauth_2_0: { scopes: [ comments ] }]
+    post:
+        body:
+            application/json:
+                schema: league-json
 /media:
     type:
         complex:
@@ -187,6 +191,14 @@ traits:
                         - type: string
                           enum: [one, two, three]
                     form-2:
+                        type: boolean
+                        required: true
+            application/x-www-form-urlencoded:
+                formParameters:
+                    form-3:
+                        displayName: form 3
+                        type: number
+                    form-4:
                         type: boolean
                         required: true
         responses:

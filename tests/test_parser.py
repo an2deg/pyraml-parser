@@ -280,3 +280,56 @@ class ResourceParseTestCase(SampleParseTestCase):
         data = self.load('full-config.yaml')
         params = data.resources['/media'].methods['head'].queryParameters
         self.assertIsNone(params)
+
+    def test_method_body_notnull_parsed(self):
+        data = self.load('full-config.yaml')
+        body = data.resources['/media'].methods['get'].body
+        self.assertTrue(body['text/xml'].notNull)
+        self.assertIsNone(body['text/xml'].formParameters)
+
+    def test_method_body_json_parsed(self):
+        data = self.load('full-config.yaml')
+        body = data.resources['/media'].methods['get'].body
+        appjson = body['application/json']
+        self.assertIn(
+            '"$schema": "http://json-schema.org/draft-03/schema"',
+            appjson.schema)
+        self.assertEqual(appjson.example, '{ "input": "hola" }')
+        self.assertIsNone(appjson.formParameters)
+
+    def test_method_body_named_schema_parsed(self):
+        data = self.load('full-config.yaml')
+        body = data.resources['/'].methods['post'].body
+        self.assertEqual(body['application/json'].schema, 'league-json')
+
+    def test_method_body_multipart_parsed(self):
+        data = self.load('full-config.yaml')
+        body = data.resources['/media'].methods['get'].body
+        formParams = body['multipart/form-data'].formParameters
+        self.assertEqual(len(formParams), 2)
+        form1 = formParams['form-1']
+        self.assertEqual(len(form1), 2)
+        self.assertEqual(form1[0].displayName, 'form 1')
+        self.assertEqual(form1[0].description, 'form 1 description')
+        self.assertEqual(form1[0].type, 'number')
+        self.assertTrue(form1[0].required)
+        self.assertEqual(form1[0].minimum, 9.5)
+        self.assertEqual(form1[0].maximum, 10.5)
+        self.assertIsNone(form1[0].enum)
+        self.assertEqual(form1[1].type, 'string')
+        self.assertListEqual(form1[1].enum, ['one', 'two', 'three'])
+        form2 = formParams['form-2']
+        self.assertEqual(form2.type, 'boolean')
+        self.assertTrue(form2.required)
+
+    def test_method_body_form_urlencoded_parsed(self):
+        data = self.load('full-config.yaml')
+        body = data.resources['/media'].methods['get'].body
+        formParams = body['application/x-www-form-urlencoded'].formParameters
+        self.assertEqual(len(formParams), 2)
+        form3 = formParams['form-3']
+        self.assertEqual(form3.displayName, 'form 3')
+        self.assertEqual(form3.type, 'number')
+        form4 = formParams['form-4']
+        self.assertEqual(form4.type, 'boolean')
+        self.assertTrue(form4.required)
