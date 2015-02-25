@@ -180,23 +180,18 @@ def parse(c, relative_path):
 
     root = RamlRoot(raml_version=raml_version)
     root.title = context.get_string_property('title', True)
-
     root.baseUri = context.get_string_property('baseUri')
     root.protocols = parse_protocols(context, root.baseUri)
-
     root.version = context.get('version')
     root.mediaType = context.get_string_property('mediaType')
     root.schemas = context.get_property_with_schema(
         'schemas', RamlRoot.schemas)
     root.baseUriParameters = context.get_property_with_schema(
         "baseUriParameters", RamlRoot.baseUriParameters)
-
     root.documentation = context.get_property_with_schema(
         'documentation', RamlRoot.documentation)
-    root.traits = parse_traits(
-        context,
-        RamlRoot.traits.field_name,
-        root.mediaType)
+    root.traits = context.get_property_with_schema(
+        'traits', RamlRoot.traits)
     root.resourceTypes = parse_resource_types(context)
 
     resources = OrderedDict()
@@ -228,8 +223,12 @@ def parse_resource_methods(resource_ctx, global_media_type):
 
 
 def parse_resource(ctx, property_name, parent_object, global_media_type):
-    """
-    Parse and extract resource with name
+    """ Parse and extract resource with name.
+
+
+    Parsing happens in a separate function(this) because resource's
+    parsing requires additional actions to decide what to parse/not
+    parse (when parsing methods).
 
     :param ctx:
     :type ctx: ParseContext
@@ -262,7 +261,7 @@ def parse_resource(ctx, property_name, parent_object, global_media_type):
 
     # Parse methods
     methods = parse_resource_methods(resource_ctx, global_media_type)
-    if len(methods):
+    if methods:
         resource.methods = methods
 
     # Parse resources
@@ -280,8 +279,11 @@ def parse_resource(ctx, property_name, parent_object, global_media_type):
 
 
 def parse_resource_types(ctx):
-    """
-    Parse and extract resourceType
+    """ Parse and extract resourceType.
+
+    Parsing happens in a separate function(this) because resourceTypes'
+    parsing requires additional actions to decide what to parse/not
+    parse (when parsing methods).
 
     :param ctx: ParseContext object
     :type ctx: ParseContext
@@ -322,8 +324,10 @@ def parse_resource_types(ctx):
 
 
 def parse_method(ctx, global_media_type):
-    """
-    Parse RAML method
+    """ Parse RAML resource method.
+
+    Parsing happens in a separate function(here) because of need to
+    parse ``is`` key as ``is_`` field.
 
     :param ctx: ParseContext object which contains RamlMethod
     :type ctx: ParseContext
@@ -336,10 +340,8 @@ def parse_method(ctx, global_media_type):
     """
 
     method = RamlMethod()
-
     method.description = ctx.get_string_property("description")
-    method.body = parse_inline_body(
-        ctx.get("body"), ctx.relative_path, global_media_type)
+    method.body = ctx.get_property_with_schema("body", RamlMethod.body)
     method.baseUriParameters = ctx.get_property_with_schema(
         "baseUriParameters", RamlMethod.baseUriParameters)
     method.headers = ctx.get_property_with_schema(
@@ -355,6 +357,7 @@ def parse_method(ctx, global_media_type):
     return method
 
 
+# TODO: Remove next 3 functions?
 def parse_traits(c, property_name, global_media_type):
     """
     Parse and extract RAML trait from context field with name `property_name`
@@ -377,29 +380,21 @@ def parse_traits(c, property_name, global_media_type):
     # We got list of dict from c.get(property_name) so we need to iterate
     # over it
     for trait_raw_value in property_value:
-        traits_context = ParseContext(trait_raw_value, c.relative_path)
+        traits_ctx = ParseContext(trait_raw_value, c.relative_path)
 
-        for trait_name in traits_context:
-            new_context = ParseContext(
-                traits_context.get(trait_name),
-                traits_context.relative_path)
+        for trait_name in traits_ctx:
+            trait_ctx = ParseContext(
+                traits_ctx.get(trait_name),
+                traits_ctx.relative_path)
+
             trait = RamlTrait()
-
-            for field_name, field_class in RamlTrait._structure.iteritems():
-                # parse string fields
-                if isinstance(field_class, String):
-                    _new_value = new_context.get_string_property(
-                        field_class.field_name)
-                    setattr(trait, field_name, _new_value)
-            trait.queryParameters = c.get_property_with_schema(
+            trait.usage = trait_ctx.get_string_property('usage')
+            trait.description = trait_ctx.get_string_property('description')
+            trait.headers = trait_ctx.get_property_with_schema(
+                'headers', RamlTrait.headers)
+            trait.queryParameters = trait_ctx.get_property_with_schema(
                 'queryParameters', RamlTrait.queryParameters)
-            trait.body = parse_body(
-                ParseContext(new_context.get("body"), new_context.relative_path),
-                global_media_type)
-            trait.is_ = new_context.get_property_with_schema(
-                RamlTrait.is_.field_name,
-                RamlTrait.is_)
-            trait.responses = c.get_property_with_schema(
+            trait.responses = trait_ctx.get_property_with_schema(
                 'responses', RamlTrait.responses)
 
             traits[trait_name] = trait
@@ -407,54 +402,27 @@ def parse_traits(c, property_name, global_media_type):
     return traits
 
 
-def parse_map_of_entities(parser, context, relative_path, parent_resource):
-    """
-
-    :param parser: function which accepts 3 arguments: data, relative_path
-        and parent_resource where entity is content
-    :type parser: callable
-    :param context: current parse context
-    :type context: dict
-    :param relative_path:
-    :param parent_resource:
-    :return:
-    """
-    res = OrderedDict()
-
-    if context:
-        for key, value in context.items():
-            if value:
-                res[key] = parser(value, relative_path, parent_resource)
-            else:
-                # workaround: if `key` is already in `context` than
-                # it's marked as !!null
-                res[key] = RamlMethod(notNull=True)
-
-    return res
-
-
-def parse_body(c, global_media_type):
+def parse_body(ctx, global_media_type):
     """
     Parse and extract resource with name
 
-    :param c: ParseContext object which contains RamlBody
-    :type c: ParseContext
+    :param ctx: ParseContext object which contains RamlBody
+    :type ctx: ParseContext
 
     :return: RamlBody or None
     :rtype: RamlBody
     """
-    if c.data is None:
+    if ctx.data is None:
         return None
 
     body = RamlBody()
-    body.example = c.get_string_property("example")
     body.body = parse_inline_body(
-        c.get("body"),
-        c.relative_path,
+        ctx.get("body"),
+        ctx.relative_path,
         global_media_type)
-    body.schema = c.get_string_property("schema")
-    body.example = c.get_string_property("example")
-    body.formParameters = c.get_property_with_schema(
+    body.schema = ctx.get_string_property("schema")
+    body.example = ctx.get_string_property("example")
+    body.formParameters = ctx.get_property_with_schema(
         "formParameters", RamlBody.formParameters)
 
     return body

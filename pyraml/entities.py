@@ -73,34 +73,17 @@ class RamlResponse(Model):
     headers = Map(String(), Reference(RamlNamedParameters))
     body = Map(String(), Reference("pyraml.entities.RamlBody"))
 
-    @classmethod
-    def from_json(self, json_object):
-        for content_type, props in json_object['body'].items():
-            if props is None:
-                json_object['body'][content_type] = {'notNull': True}
-        return super(RamlResponse, self).from_json(json_object)
-
 
 class RamlTrait(Model):
     """ A trait is a partial method definition that, like a method,
     can provide method-level properties such as
     description, headers, query string parameters, and responses.
     """
-    name = String()
     usage = String()
     description = String()
-    displayName = String()
-    responses = Map(Int(), Reference(RamlResponse))
-    method = String()
+    headers = Map(String(), Reference(RamlNamedParameters))
     queryParameters = Map(String(), Reference(RamlNamedParameters))
-    body = Reference(RamlBody)
-    # Reference to another RamlTrait
-    is_ = List(
-        Or(
-            String(),
-            Map(String(), Map(String(), String()))
-        ),
-        field_name="is")
+    responses = Map(Int(), Reference(RamlResponse))
 
 
 class RamlMethod(Model):
@@ -134,7 +117,7 @@ class RamlResource(Model):
         Map(String(),
             Map(String(), String())))
     parentResource = Reference("pyraml.entities.RamlResource")
-    methods = Map(String(), Reference(RamlBody))
+    methods = Map(String(), Reference(RamlMethod))
     resources = Map(String(), Reference("pyraml.entities.RamlResource"))
     uriParameters = Map(String(), Reference(RamlNamedParameters))
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
@@ -147,7 +130,7 @@ class RamlResourceType(Model):
     """
     usage = String()
     description = String()
-    methods = Map(String(), Reference(RamlBody))
+    methods = Map(String(), Reference(RamlMethod))
 
 
 class RamlRoot(Model):

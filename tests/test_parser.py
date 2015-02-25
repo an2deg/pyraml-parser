@@ -382,7 +382,7 @@ class ResourceParseTestCase(SampleParseTestCase):
 
 
 class ResourceTypesParseTestCase(SampleParseTestCase):
-    """ Test parsing of resourceTypes """
+    """ Test parsing of root resourceTypes """
 
     def test_simple_resourcetypes_parsed(self):
         data = self.load('full-config.yaml')
@@ -424,5 +424,51 @@ class ResourceTypesParseTestCase(SampleParseTestCase):
 
 
 class TraitsParseTestCase(SampleParseTestCase):
-    """ Test parsing of traits """
-    pass
+    """ Test parsing of root traits """
+
+    def test_no_traits_provided(self):
+        data = self.load('null-elements.yaml')
+        self.assertIsNone(data.traits)
+
+    def test_simple_traits_parsed(self):
+        data = self.load('full-config.yaml')
+        self.assertEqual(len(data.traits), 3)
+        self.assertListEqual(
+            data.traits.keys(),
+            ['simple', 'knotty', 'orderable'])
+        self.assertEqual(data.traits['simple'].usage, 'simple trait')
+        self.assertIsNone(data.traits['simple'].description)
+        self.assertEqual(data.traits['knotty'].description, '<<value>> trait')
+        self.assertIsNone(data.traits['knotty'].usage)
+        orderable = data.traits['orderable']
+        self.assertEqual(orderable.usage, 'Use to order items')
+        self.assertEqual(orderable.description, 'Orderable trait desc')
+
+    def test_traits_headers_parsed(self):
+        data = self.load('full-config.yaml')
+        xord = data.traits['orderable'].headers['X-Ordering']
+        self.assertEqual(len(data.traits['orderable'].headers), 1)
+        self.assertEqual(xord.displayName, 'Ordering')
+        self.assertEqual(xord.type, 'string')
+        self.assertListEqual(xord.enum, ['desc', 'asc'])
+
+    def test_traits_queryparameters_parsed(self):
+        data = self.load('full-config.yaml')
+        self.assertEqual(len(data.traits['orderable'].queryParameters), 2)
+        orderBy = data.traits['orderable'].queryParameters['orderBy']
+        self.assertEqual(orderBy.description, 'Order by field: <<fieldsList>>')
+        self.assertEqual(orderBy.type, 'string')
+        self.assertFalse(orderBy.required)
+        order = data.traits['orderable'].queryParameters['order']
+        self.assertEqual(order.description, 'Order')
+        self.assertListEqual(order.enum, ['desc', 'asc'])
+        self.assertEqual(order.default, 'desc')
+        self.assertTrue(order.required)
+
+    def test_traits_responses_parsed(self):
+        data = self.load('full-config.yaml')
+        self.assertEqual(len(data.traits['orderable'].responses), 1)
+        resp200 = data.traits['orderable'].responses[200]
+        self.assertEqual(len(resp200.body), 1)
+        self.assertEqual(resp200.body['application/json'].example,
+                         '{ "message": "Bar" }')

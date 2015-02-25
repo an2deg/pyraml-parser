@@ -4,4 +4,4 @@
 - complex:
     post:
         description: not super
-    put:
+    put: !!null

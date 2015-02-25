@@ -310,9 +310,6 @@ class Map(BaseField):
     def __init__(self, key_type, value_type, **kwargs):
         """
         Constructor for List field type
-
-        :param element_type: list element type
-        :type element_type: instance of BaseField
         """
         super(Map, self).__init__(**kwargs)
 
@@ -456,6 +453,9 @@ class Reference(BaseField):
         :rtype: int or long
         """
         self._lazy_import()
+
+        if hasattr(self.ref_class, 'notNull') and value is None:
+            value = {'notNull': True}
 
         if isinstance(value, self.ref_class):
             # Value is already instance of ref_class, don't need to convert it

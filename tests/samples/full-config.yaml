@@ -130,9 +130,32 @@ resourceTypes:
 
 traits:
     - simple:
-        displayName: simple trait
+        usage: simple trait
     - knotty:
-        displayName: <<value>> trait
+        description: <<value>> trait
+    - orderable:
+        usage: Use to order items
+        description: Orderable trait desc
+        headers:
+            X-Ordering:
+                displayName: Ordering
+                type: string
+                enum: [desc, asc]
+        queryParameters:
+            orderBy:
+                description: "Order by field: <<fieldsList>>"
+                type: string
+                required: false
+            order:
+                description: Order
+                enum: [desc, asc]
+                default: desc
+                required: true
+        responses:
+            200:
+                body:
+                    application/json:
+                        example: '{ "message": "Bar" }'
 
 /:
     type: basic
