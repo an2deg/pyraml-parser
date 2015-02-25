@@ -102,10 +102,32 @@ securitySchemes:
           tokenCredentialsUri: https://api.dropbox.com/1/oauth/access_token
 
 resourceTypes:
+    - collection:
+        usage: Use when working with collections
+        description: Collection of available items.
+        post:
+            description: Add a new item.
+            queryParameters:
+                access_token:
+                    description: "The access token"
+                    example: AABBCCDD
+                    required: true
+                    type: string
+            body:
+                application/json:
+                    schema: <<resourcePathName>>
+                    example: <<exampleItem>>
+            responses:
+                200:
+                    body:
+                        application/json:
+                            example: '{ "message": "Foo" }'
+        get:
     - basic:
-        displayName: basic type
+        usage: use this for basic operations
     - complex:
-        displayName: <<value>> type
+        description: complex desc
+
 traits:
     - simple:
         displayName: simple trait
@@ -118,10 +140,10 @@ traits:
     displayName: Root resource
     description: Root resource description
     head:
-        is:
-            - simple
-            - knotty:
-                value: mingled
+        is: [
+                simple,
+                knotty: {value: mingled}
+            ]
         protocols: [HTTP]
         securedBy: [oauth_2_0: { scopes: [ comments ] }]
     post:
@@ -132,6 +154,7 @@ traits:
     type:
         complex:
             value: complicated
+    is: [ simple ]
     displayName: Media collection
     baseUriParameters:
         host:

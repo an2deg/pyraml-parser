@@ -63,7 +63,6 @@ class RamlBody(Model):
            List(Reference(RamlNamedParameters)))
     )
     body = Map(String(), Reference("pyraml.entities.RamlBody"))
-    is_ = List(String(), field_name="is")
 
 
 class RamlResponse(Model):
@@ -83,19 +82,10 @@ class RamlResponse(Model):
 
 
 class RamlTrait(Model):
+    """ A trait is a partial method definition that, like a method,
+    can provide method-level properties such as
+    description, headers, query string parameters, and responses.
     """
-    traits:
-      - secured:
-          usage: Apply this to any method that needs to be secured
-          description: Some requests require authentication.
-          queryParameters:
-            access_token:
-              description: Access Token
-              type: string
-              example: ACCESS_TOKEN
-              required: true
-    """
-
     name = String()
     usage = String()
     description = String()
@@ -105,13 +95,12 @@ class RamlTrait(Model):
     queryParameters = Map(String(), Reference(RamlNamedParameters))
     body = Reference(RamlBody)
     # Reference to another RamlTrait
-    is_ = List(String(), field_name="is")
-
-
-class RamlResourceType(Model):
-    methods = Map(String(), Reference(RamlTrait))
-    type = String()
-    is_ = List(String(), field_name="is")
+    is_ = List(
+        Or(
+            String(),
+            Map(String(), Map(String(), String()))
+        ),
+        field_name="is")
 
 
 class RamlMethod(Model):
@@ -123,19 +112,42 @@ class RamlMethod(Model):
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
     headers = Map(String(), Reference(RamlNamedParameters))
     protocols = List(String())
+    is_ = List(
+        Or(
+            String(),
+            Map(String(), Map(String(), String()))
+        ),
+        field_name="is")
 
 
 class RamlResource(Model):
     displayName = String()
     description = String()
-    uri = String()
-    is_ = Reference(RamlTrait, field_name="is")
-    type = Reference(RamlResourceType)
+    is_ = List(
+        Or(
+            String(),
+            Map(String(), Map(String(), String()))
+        ),
+        field_name="is")
+    type = Or(
+        String(),
+        Map(String(),
+            Map(String(), String())))
     parentResource = Reference("pyraml.entities.RamlResource")
     methods = Map(String(), Reference(RamlBody))
     resources = Map(String(), Reference("pyraml.entities.RamlResource"))
     uriParameters = Map(String(), Reference(RamlNamedParameters))
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
+
+
+class RamlResourceType(Model):
+    """ A resource type is a partial resource definition that,
+    like a resource, can specify a description and methods and
+    their properties.
+    """
+    usage = String()
+    description = String()
+    methods = Map(String(), Reference(RamlBody))
 
 
 class RamlRoot(Model):

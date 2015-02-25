@@ -177,6 +177,7 @@ class InclusionTestCase(SampleParseTestCase):
 
 
 class ResourceParseTestCase(SampleParseTestCase):
+    """ Test pasing of resources and all included structures. """
 
     def test_name_desc_parsed(self):
         data = self.load('full-config.yaml')
@@ -365,3 +366,63 @@ class ResourceParseTestCase(SampleParseTestCase):
         self.assertEqual(headers['two'].type, 'integer')
         self.assertIsNone(headers['two'].maxLength)
         self.assertIsNone(headers['two'].required)
+
+    def test_resource_type_parsed(self):
+        data = self.load('full-config.yaml')
+        self.assertEqual(data.resources['/'].type, 'basic')
+        self.assertDictEqual(data.resources['/media'].type, {
+            'complex': {'value': 'complicated'}})
+
+    def test_resource_and_method_traits_parsed(self):
+        data = self.load('full-config.yaml')
+        self.assertEqual(data.resources['/media'].is_, ['simple'])
+        self.assertEqual(
+            data.resources['/'].methods['head'].is_,
+            ['simple', {'knotty': {'value': 'mingled'}}])
+
+
+class ResourceTypesParseTestCase(SampleParseTestCase):
+    """ Test parsing of resourceTypes """
+
+    def test_simple_resourcetypes_parsed(self):
+        data = self.load('full-config.yaml')
+        self.assertEqual(len(data.resourceTypes), 3)
+        self.assertIsNone(data.resourceTypes['basic'].description)
+        self.assertEqual(
+            data.resourceTypes['basic'].usage,
+            'use this for basic operations')
+        self.assertEqual(data.resourceTypes['complex'].description,
+                         'complex desc')
+        self.assertIsNone(data.resourceTypes['complex'].usage)
+
+    def test_complex_resourcetypes_parsed(self):
+        data = self.load('full-config.yaml')
+        collection = data.resourceTypes['collection']
+        self.assertIsInstance(collection, entities.RamlResourceType)
+        self.assertEqual(collection.usage, 'Use when working with collections')
+        self.assertEqual(
+            collection.description,
+            'Collection of available items.')
+        self.assertEqual(len(collection.methods), 2)
+        self.assertIn('get', collection.methods)
+        post = collection.methods['post']
+        self.assertEqual(post.description, 'Add a new item.')
+        self.assertEqual(len(post.queryParameters), 1)
+        token = post.queryParameters['access_token']
+        self.assertEqual(token.description, 'The access token')
+        self.assertEqual(token.example, 'AABBCCDD')
+        self.assertTrue(token.required)
+        self.assertEqual(token.type, 'string')
+        self.assertEqual(len(post.body), 1)
+        appjson = post.body['application/json']
+        self.assertEqual(appjson.schema, '<<resourcePathName>>')
+        self.assertEqual(appjson.example, '<<exampleItem>>')
+        self.assertEqual(len(post.responses), 1)
+        resp200 = post.responses[200]
+        self.assertEqual(resp200.body['application/json'].example,
+                         '{ "message": "Foo" }')
+
+
+class TraitsParseTestCase(SampleParseTestCase):
+    """ Test parsing of traits """
+    pass
