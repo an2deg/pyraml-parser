@@ -79,8 +79,9 @@ class String(BaseField):
             value_len = len(value)
             if value_len > self._max_len:
                 raise ValueError(
-                    "Length of field is exceeds maximum allowed: {} but "
-                    "expect no more than {}".format(value_len, self._max_len))
+                    "Length of field exceeds maximum allowed: {}."
+                    "Expected max length more than {}".format(
+                        value_len, self._max_len))
 
 
 class Bool(BaseField):
@@ -100,11 +101,7 @@ class Bool(BaseField):
         :return: None
         """
         super(Bool, self).validate(value)
-
-        if value is None:
-            return
-
-        if not isinstance(value, bool):
+        if (value is not None) and not isinstance(value, bool):
             raise ValueError("{!r} expected to be bool".format(value))
 
 
@@ -125,9 +122,7 @@ class Int(BaseField):
         :return: None
         """
         super(Int, self).validate(value)
-        if value is None:
-            return
-        if not isinstance(value, (int, long)):
+        if (value is not None) and not isinstance(value, (int, long)):
             raise ValueError("{!r} expected to be integer".format(value))
 
 
@@ -148,11 +143,7 @@ class Float(BaseField):
         :return: None
         """
         super(Float, self).validate(value)
-
-        if value is None:
-            return
-
-        if not isinstance(value, float):
+        if (value is not None) and not isinstance(value, float):
             raise ValueError(
                 "{!r} expected to be integer but got {}".format(
                     value, type(value).__name__))
@@ -162,14 +153,13 @@ class List(BaseField):
     """
     Class represent JSON list type
 
-     >>> some_field = List(String(max_len=100))
-     >>> some_field.to_python(["Some string"]) == ["Some string"]
+     >>> list_field = List(String(max_len=100))
+     >>> list_field.to_python(["Some string"]) == ["Some string"]
 
-     >>> some_field.to_python([2])
+     >>> list_field.to_python([2])
      Traceback (most recent call last):
      ...
      ValueError: '2' expected to be string
-
     """
 
     def __init__(self, element_type, min_len=None, max_len=None, **kwargs):
@@ -184,7 +174,7 @@ class List(BaseField):
         if not isinstance(element_type, BaseField):
             raise ValueError(
                 "Invalid type of 'element_type': expected to be instance of "
-                "subclass of BaseField but it is {!r}".format(element_type))
+                "subclass of BaseField but got {!r}".format(element_type))
         self._min_len = min_len
         self._max_len = max_len
         self._element_type = element_type
@@ -206,15 +196,17 @@ class List(BaseField):
             raise ValueError("{!r} expected to be list".format(value))
 
         value_len = len(value)
-        if self._max_len is not None and value_len > self._max_len:
+        if (self._max_len is not None) and (value_len > self._max_len):
             raise ValueError(
-                "Length of field is exceeds maximum allowed: {} but expect "
-                "no more than {}".format(value_len, self._max_len))
+                "Length of field exceeds maximum allowed: {}. "
+                "Expected value of length not more than {}".format(
+                    value_len, self._max_len))
 
-        if self._min_len is not None and value_len < self._min_len:
+        if (self._min_len is not None) and (value_len < self._min_len):
             raise ValueError(
-                "Length of field is less than minimum allowed: {} "
-                "but expect no less than {}".format(value_len, self._max_len))
+                "Length of field is less than minimum allowed: {}."
+                "Expected value of length not less than {}".format(
+                    value_len, self._max_len))
 
     def to_python(self, value):
         """
@@ -243,7 +235,6 @@ class Map(BaseField):
      Traceback (most recent call last):
      ...
      ValueError: '2' expected to be string
-
     """
 
     def __init__(self, key_type, value_type, **kwargs):
@@ -335,7 +326,6 @@ class Reference(BaseField):
      Traceback (most recent call last):
      ...
      ValueError: '2' expected to be RamlDocumentation
-
     """
 
     def __init__(self, ref_class, **kwargs):
@@ -376,7 +366,7 @@ class Reference(BaseField):
             return
 
         if not isinstance(value, self.ref_class):
-            raise ValueError("{!r} expected to be {}".format(
+            raise ValueError("{!r} expected to be {} or dict".format(
                 value, self.ref_class))
 
     def to_python(self, value):
@@ -404,7 +394,8 @@ class Reference(BaseField):
             # Value empty, just instantiate empty `ref_class`
             value = self.ref_class()
         else:
-            raise ValueError("{!r} expected to be dict".format(value))
+            raise ValueError("{!r} expected to be {} or dict".format(
+                value, self.ref_class))
 
         return super(Reference, self).to_python(value)
 
@@ -481,7 +472,6 @@ class Or(BaseField):
 
         :return: first of accepted variant
         """
-
         for field in self.variants:
             try:
                 res = field.to_python(value)

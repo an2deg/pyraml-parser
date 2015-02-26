@@ -43,34 +43,13 @@ class RamlDocumentation(Model):
     content = String(required=True)
 
 
-class RamlSchema(Model):
-    """ The value of the schemas property is an array of maps;
-    in each map, the keys are the schema name, and the values
-    are schema definitions.
-    """
-    name = String()
-    schema = String()
-
-    @classmethod
-    def from_json(self, json_object):
-        """ Restructure input data
-        from {name: schema}
-        to   {name: name, schema: schema} form.
-        """
-        data = {
-            'name': json_object.keys()[0],
-            'schema': json_object.values()[0],
-        }
-        return super(RamlSchema, self).from_json(data)
-
-
 class RamlNamedParameters(Model):
     """ http://raml.org/spec.html#named-parameters """
-    name = String()
-    description = String()
-    example = Or(String(), Int(), Float())
     displayName = String()
+    description = String()
     type = String()
+    name = String()
+    example = Or(String(), Int(), Float())
     enum = List(Or(String(), Float(), Int()))
     pattern = String()
     minLength = Int()
@@ -104,7 +83,6 @@ class RamlBody(Model):
         Or(Reference(RamlNamedParameters),
            List(Reference(RamlNamedParameters)))
     )
-    body = Map(String(), Reference("pyraml.entities.RamlBody"))
 
 
 class RamlResponse(Model):
@@ -200,6 +178,6 @@ class RamlRoot(SecuredEntity, Model):
     traits = Map(String(), Reference(RamlTrait))
     resources = Map(String(), Reference(RamlResource))
     resourceTypes = Map(String(), Reference(RamlResourceType))
-    schemas = List(Reference(RamlSchema))
+    schemas = Map(String(), String())
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
     securitySchemes = Map(String(), Reference(RamlSecurityScheme))

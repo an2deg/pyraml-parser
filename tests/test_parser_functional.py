@@ -70,14 +70,10 @@ class RootParseTestCase(SampleParseTestCase):
     def test_schemas_parsed(self):
         data = self.load('full-config.yaml')
         self.assertEqual(len(data.schemas), 2)
-        self.assertIsInstance(data.schemas[0], entities.RamlSchema)
-        self.assertEqual(data.schemas[0].name, 'league-json')
-        self.assertIn('"type": "object"', data.schemas[0].schema)
-        self.assertIsInstance(data.schemas[1], entities.RamlSchema)
-        self.assertEqual(data.schemas[1].name, 'league-xml')
+        self.assertIn('"type": "object"', data.schemas['league-json'])
         self.assertIn(
             '<?xml version="1.0" encoding="ISO-8859-1" ?>',
-            data.schemas[1].schema)
+            data.schemas['league-xml'])
 
     def test_schemas_not_provided(self):
         data = self.load('null-elements.yaml')
