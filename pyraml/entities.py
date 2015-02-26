@@ -5,11 +5,20 @@ from fields import String, Reference, Map, List, Bool, Int, Float, Or
 
 
 class RamlDocumentation(Model):
+    """ The documentation property MUST be an array of documents.
+    Each document MUST contain title and content attributes, both
+    of which are REQUIRED. If the documentation property is specified,
+    it MUST include at least one document.
+    """
     title = String(required=True)
     content = String(required=True)
 
 
 class RamlSchema(Model):
+    """ The value of the schemas property is an array of maps;
+    in each map, the keys are the schema name, and the values
+    are schema definitions.
+    """
     name = String()
     schema = String()
 
@@ -27,6 +36,7 @@ class RamlSchema(Model):
 
 
 class RamlNamedParameters(Model):
+    """ http://raml.org/spec.html#named-parameters """
     name = String()
     description = String()
     example = Or(String(), Int(), Float())
@@ -54,6 +64,9 @@ class RamlHeader(RamlNamedParameters):
 
 
 class RamlBody(Model):
+    """ A method's body is defined in the body property as a hashmap,
+    in which the key MUST be a valid media type.
+    """
     schema = String()
     example = String()
     notNull = Bool()
@@ -66,8 +79,10 @@ class RamlBody(Model):
 
 
 class RamlResponse(Model):
-    schema = String()
-    example = String()
+    """ Responses MUST be a map of one or more HTTP status codes,
+    where each status code itself is a map that describes that status
+    code.
+    """
     notNull = Bool()
     description = String()
     headers = Map(String(), Reference(RamlNamedParameters))
@@ -87,6 +102,7 @@ class RamlTrait(Model):
 
 
 class RamlMethod(Model):
+    """ http://raml.org/spec.html#methods """
     notNull = Bool()
     description = String()
     body = Map(String(), Reference(RamlBody))
@@ -104,6 +120,7 @@ class RamlMethod(Model):
 
 
 class RamlResource(Model):
+    """ http://raml.org/spec.html#resources-and-nested-resources """
     displayName = String()
     description = String()
     is_ = List(
@@ -134,6 +151,7 @@ class RamlResourceType(Model):
 
 
 class RamlRoot(Model):
+    """ http://raml.org/spec.html#root-section """
     raml_version = String(required=True)
     title = String(required=True)
     version = String()

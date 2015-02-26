@@ -341,8 +341,6 @@ class ResourceParseTestCase(SampleParseTestCase):
         self.assertEqual(len(responses), 2)
         self.assertEqual(
             responses[200].description, 'regular success response')
-        self.assertEqual(responses[200].example, '{ "key2": "value2" }')
-        self.assertEqual(responses[200].schema, 'league-json')
         self.assertEqual(len(responses[200].body), 1)
         self.assertEqual(
             responses[200].body['application/json'].example,

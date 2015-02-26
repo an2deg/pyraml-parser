@@ -250,8 +250,6 @@ traits:
         responses:
             200:
                 description: regular success response
-                example: '{ "key2": "value2" }'
-                schema: league-json
                 headers:
                     one:
                         type: string
