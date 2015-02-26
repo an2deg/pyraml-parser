@@ -9,3 +9,4 @@ RAML_CONTENT_MIME_TYPES = [
     "application/yaml",
     "application/x-yaml",
 ]
+HTTP_METHODS = {"get", "post", "put", "delete", "head"}

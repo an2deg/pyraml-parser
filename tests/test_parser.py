@@ -502,3 +502,102 @@ class TraitsParseTestCase(SampleParseTestCase):
         self.assertEqual(len(resp200.body), 1)
         self.assertEqual(resp200.body['application/json'].example,
                          '{ "message": "Bar" }')
+
+
+class SecuritySchemesParseTestCase(SampleParseTestCase):
+
+    def test_desc_type_parsed(self):
+        data = self.load('full-config.yaml')
+        self.assertEqual(len(data.securitySchemes), 2)
+        self.assertEqual(
+            data.securitySchemes['oauth_2_0'].description,
+            'OAuth 2.0 for authenticating all API requests.')
+        self.assertEqual(
+            data.securitySchemes['oauth_2_0'].type,
+            'OAuth 2.0')
+        self.assertEqual(
+            data.securitySchemes['oauth_1_0'].description,
+            'OAuth 1.0 continues to be supported for all API requests')
+        self.assertEqual(
+            data.securitySchemes['oauth_1_0'].type,
+            'OAuth 1.0')
+
+    def test_settings_parsed(self):
+        data = self.load('full-config.yaml')
+        oauth1_settings = data.securitySchemes['oauth_1_0'].settings
+        oauth2_settings = data.securitySchemes['oauth_2_0'].settings
+        self.assertDictEqual(oauth1_settings, {
+            'requestTokenUri': 'https://api.foobox.com/1/oauth/request_token',
+            'authorizationUri': 'https://www.foobox.com/1/oauth/authorize',
+            'tokenCredentialsUri': 'https://api.foobox.com/1/oauth/access_token',
+        })
+        self.assertDictEqual(oauth2_settings, {
+            'authorizationUri': 'https://www.foobox.com/1/oauth2/authorize',
+            'accessTokenUri': 'https://api.foobox.com/1/oauth2/token',
+            'authorizationGrants': ['code', 'token'],
+            'scopes': ['https://www.google.com/m8/feeds'],
+        })
+
+    def test_describedby_desc_parsed(self):
+        data = self.load('full-config.yaml')
+        self.assertEqual(
+            data.securitySchemes['oauth_2_0'].describedBy.description,
+            'foo')
+
+    def test_describedby_baseuriparameters_parsed(self):
+        data = self.load('full-config.yaml')
+        params = data.securitySchemes['oauth_2_0'].describedBy.baseUriParameters
+        self.assertEqual(len(params), 1)
+        self.assertEqual(params['host'].enum, ['api3secured'])
+
+    def test_describedby_queryparameters_parsed(self):
+        data = self.load('full-config.yaml')
+        params = data.securitySchemes['oauth_2_0'].describedBy.queryParameters
+        self.assertEqual(len(params), 1)
+        secured = params['isSecured']
+        self.assertEqual(secured.type, 'integer')
+        self.assertEqual(secured.displayName, 'Is secured')
+        self.assertIsNone(secured.description)
+
+    def test_describedby_body_parsed(self):
+        data = self.load('full-config.yaml')
+        body = data.securitySchemes['oauth_2_0'].describedBy.body
+        self.assertEqual(len(body), 1)
+        appjson = body['application/json']
+        self.assertEqual(appjson.schema, '{ "foo": "bar" }')
+        self.assertEqual(appjson.example, '{ "input": "hola" }')
+        self.assertIsNone(appjson.formParameters)
+
+    def test_describedby_headers_parsed(self):
+        data = self.load('full-config.yaml')
+        headers = data.securitySchemes['oauth_2_0'].describedBy.headers
+        self.assertEqual(len(headers), 1)
+        header = headers['Authorization']
+        self.assertEqual(
+            header.description,
+            'Used to send a valid OAuth 2 access token.')
+        self.assertEqual(header.type, 'string')
+        self.assertIsNone(header.displayName)
+
+    def test_describedby_responses_parsed(self):
+        data = self.load('full-config.yaml')
+        responses = data.securitySchemes['oauth_2_0'].describedBy.responses
+        self.assertEqual(len(responses), 2)
+        self.assertEqual(responses[403].description, 'Bad OAuth request')
+        resp401 = responses[401]
+        self.assertEqual(resp401.description, 'Bad or expired token')
+        self.assertEqual(len(resp401.body), 1)
+        self.assertEqual(resp401.body['application/json'].example,
+                         '{ "message": "fail" }')
+        self.assertIsNone(resp401.body['application/json'].schema)
+
+    def test_describedby_not_provided(self):
+        data = self.load('full-config.yaml')
+        oauth1 = data.securitySchemes['oauth_1_0']
+        self.assertIsNone(oauth1.describedBy.description)
+        self.assertIsNone(oauth1.describedBy.body)
+        self.assertIsNone(oauth1.describedBy.headers)
+        self.assertIsNone(oauth1.describedBy.queryParameters)
+        self.assertIsNone(oauth1.describedBy.responses)
+        self.assertIsNone(oauth1.describedBy.baseUriParameters)
+        self.assertIsNone(oauth1.describedBy.protocols)

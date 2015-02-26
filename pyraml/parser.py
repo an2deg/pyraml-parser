@@ -9,19 +9,16 @@ import yaml
 from collections import OrderedDict
 
 from raml_elements import ParserRamlInclude
-from fields import String, Reference, List
+from fields import String
 from entities import (
-    RamlRoot, RamlResource, RamlMethod, RamlBody,
-    RamlResourceType, RamlTrait, RamlNamedParameters)
+    RamlRoot, RamlResource, RamlMethod, RamlResourceType)
 from constants import (
     RAML_SUPPORTED_FORMAT_VERSION, RAML_CONTENT_MIME_TYPES,
-    RAML_VALID_PROTOCOLS)
+    RAML_VALID_PROTOCOLS, HTTP_METHODS)
 
 
 __all__ = ["RamlException", "RamlNotFoundException", "RamlParseException",
            "ParseContext", "load", "parse"]
-
-HTTP_METHODS = ("get", "post", "put", "delete", "head")
 
 
 class RamlException(StandardError):
@@ -194,6 +191,8 @@ def parse(c, relative_path):
         'traits', RamlRoot.traits)
     root.securedBy = context.get_property_with_schema(
         'securedBy', RamlRoot.securedBy)
+    root.securitySchemes = context.get_property_with_schema(
+        'securitySchemes', RamlRoot.securitySchemes)
     root.resourceTypes = parse_resource_types(context)
 
     resources = OrderedDict()

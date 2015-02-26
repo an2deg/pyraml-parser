@@ -4,6 +4,35 @@ from model import Model
 from fields import String, Reference, Map, List, Bool, Int, Float, Or, Null
 
 
+class SecuredEntity(object):
+    # [foo, {bar: {baz: [buz]}}, null]
+    securedBy = List(
+        Or(String(),
+           Map(String(),
+               Map(String(), List(String()))),
+           Null()))
+
+
+class TraitedEntity(object):
+    """ Represents entities that may have traits specified
+    in ``is`` field.
+    """
+    is_ = List(
+        Or(String(),
+           Map(String(),
+               Map(String(), String()))),
+        field_name='is')
+
+
+class ResourceTypedEntity(object):
+    """ Represents entities that may have resourceTypes
+    specified in ``type`` field.
+    """
+    type = Or(String(),
+              Map(String(),
+                  Map(String(), String())))
+
+
 class RamlDocumentation(Model):
     """ The documentation property MUST be an array of documents.
     Each document MUST contain title and content attributes, both
@@ -101,7 +130,7 @@ class RamlTrait(Model):
     responses = Map(Int(), Reference(RamlResponse))
 
 
-class RamlMethod(Model):
+class RamlMethod(TraitedEntity, SecuredEntity, Model):
     """ http://raml.org/spec.html#methods """
     notNull = Bool()
     description = String()
@@ -111,38 +140,17 @@ class RamlMethod(Model):
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
     headers = Map(String(), Reference(RamlNamedParameters))
     protocols = List(String())
-    is_ = List(
-        Or(String(),
-           Map(String(), Map(String(), String()))),
-        field_name="is")
-    securedBy = List(
-        Or(String(),
-           Map(String(),
-               Map(String(), List(String()))),
-           Null()))
 
 
-class RamlResource(Model):
+class RamlResource(ResourceTypedEntity, TraitedEntity, SecuredEntity, Model):
     """ http://raml.org/spec.html#resources-and-nested-resources """
     displayName = String()
     description = String()
-    is_ = List(
-        Or(String(),
-           Map(String(), Map(String(), String()))),
-        field_name="is")
-    type = Or(String(),
-              Map(String(),
-                  Map(String(), String())))
     parentResource = Reference("pyraml.entities.RamlResource")
     methods = Map(String(), Reference(RamlMethod))
     resources = Map(String(), Reference("pyraml.entities.RamlResource"))
     uriParameters = Map(String(), Reference(RamlNamedParameters))
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
-    securedBy = List(
-        Or(String(),
-           Map(String(),
-               Map(String(), List(String()))),
-           Null()))
 
 
 class RamlResourceType(Model):
@@ -155,7 +163,32 @@ class RamlResourceType(Model):
     methods = Map(String(), Reference(RamlMethod))
 
 
-class RamlRoot(Model):
+class RamlSecuritySchemeDescription(Model):
+    """ The describedBy attribute MAY be used to apply a trait-like
+    structure to a security scheme mechanism so as to extend the
+    mechanism, such as specifying response codes, HTTP headers or
+    custom documentation.
+    """
+    description = String()
+    body = Map(String(), Reference(RamlBody))
+    headers = Map(String(), Reference(RamlNamedParameters))
+    queryParameters = Map(String(), Reference(RamlNamedParameters))
+    responses = Map(Int(), Reference(RamlResponse))
+    baseUriParameters = Map(String(), Reference(RamlNamedParameters))
+    protocols = List(String())
+
+
+class RamlSecurityScheme(Model):
+    """ http://raml.org/spec.html#security """
+    description = String()
+    type = String()
+    describedBy = Reference(RamlSecuritySchemeDescription)
+    settings = Map(String(),
+                   Or(String(),
+                      List(String())))
+
+
+class RamlRoot(SecuredEntity, Model):
     """ http://raml.org/spec.html#root-section """
     raml_version = String(required=True)
     title = String(required=True)
@@ -169,8 +202,4 @@ class RamlRoot(Model):
     resourceTypes = Map(String(), Reference(RamlResourceType))
     schemas = List(Reference(RamlSchema))
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
-    securedBy = List(
-        Or(String(),
-           Map(String(),
-               Map(String(), List(String()))),
-           Null()))
+    securitySchemes = Map(String(), Reference(RamlSecurityScheme))
