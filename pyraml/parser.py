@@ -201,7 +201,7 @@ def parse(c, relative_path):
             resources[property_name] = parse_resource(
                 context, property_name, root)
 
-    if resources > 0:
+    if resources:
         root.resources = resources
 
     return root

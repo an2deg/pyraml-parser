@@ -505,6 +505,7 @@ class TraitsParseTestCase(SampleParseTestCase):
 
 
 class SecuritySchemesParseTestCase(SampleParseTestCase):
+    """ Test parsing securitySchemes from root """
 
     def test_desc_type_parsed(self):
         data = self.load('full-config.yaml')

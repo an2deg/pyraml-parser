@@ -14,8 +14,7 @@ class BaseField(object):
         self.field_name = field_name
 
     def validate(self, value):
-        """
-        Validate `value`
+        """ Validate ``value``
 
         :raise ValueError: in case of validation errors
         """
@@ -30,8 +29,9 @@ class BaseField(object):
 
     def to_python(self, value):
         """
-        Do de-from_python steps from converting object from JSON
-        representation to python representation
+        Convert JSON representation of an object ``value`` to python
+        representation. If not overriden, this method returns results
+        of call to self.validate.
         """
         self.validate(value)
         return value
@@ -44,10 +44,6 @@ class Null(BaseField):
         super(Null, self).validate(value)
         if value is not None:
             raise ValueError('Expected None, got {}'.format(value))
-
-    def to_python(self, value):
-        self.validate(value)
-        return value
 
 
 class String(BaseField):
@@ -86,20 +82,6 @@ class String(BaseField):
                     "Length of field is exceeds maximum allowed: {} but "
                     "expect no more than {}".format(value_len, self._max_len))
 
-    def to_python(self, value):
-        """
-        Convert value to python representation
-
-        :param value: a string to process
-        :type value: basestring
-
-        :return: string
-        :rtype: basestring
-        """
-        self.validate(value)
-
-        return value
-
 
 class Bool(BaseField):
     """
@@ -109,10 +91,6 @@ class Bool(BaseField):
 
      >>> some_field.to_python(True) == True
     """
-
-    def __init__(self, **kwargs):
-        super(Bool, self).__init__(**kwargs)
-
     def validate(self, value):
         """
         Validate value to match rules
@@ -129,18 +107,6 @@ class Bool(BaseField):
         if not isinstance(value, bool):
             raise ValueError("{!r} expected to be bool".format(value))
 
-    def to_python(self, value):
-        """
-        Convert value to python representation
-
-        :param value: a string to process
-        :type value: bool
-        :return: None
-        """
-        self.validate(value)
-
-        return value
-
 
 class Int(BaseField):
     """
@@ -150,10 +116,6 @@ class Int(BaseField):
      >>> some_field.to_python(1) == 1
 
     """
-
-    def __init__(self, **kwargs):
-        super(Int, self).__init__(**kwargs)
-
     def validate(self, value):
         """
         Validate value to match rules
@@ -163,26 +125,10 @@ class Int(BaseField):
         :return: None
         """
         super(Int, self).validate(value)
-
         if value is None:
             return
-
         if not isinstance(value, (int, long)):
             raise ValueError("{!r} expected to be integer".format(value))
-
-    def to_python(self, value):
-        """
-        Convert value to python representation
-
-        :param value: a string to process
-        :type value: int or long
-
-        :return: int or long
-        :rtype: int or long
-        """
-        self.validate(value)
-
-        return value
 
 
 class Float(BaseField):
@@ -193,10 +139,6 @@ class Float(BaseField):
      >>> some_field.to_python(1.0) == 1.0
 
     """
-
-    def __init__(self, **kwargs):
-        super(Float, self).__init__(**kwargs)
-
     def validate(self, value):
         """
         Validate value to match rules
@@ -214,20 +156,6 @@ class Float(BaseField):
             raise ValueError(
                 "{!r} expected to be integer but got {}".format(
                     value, type(value).__name__))
-
-    def to_python(self, value):
-        """
-        Convert value to python representation
-
-        :param value: a string to process
-        :type value: float
-
-        :return: float
-        :rtype: float
-        """
-        self.validate(value)
-
-        return value
 
 
 class List(BaseField):
@@ -301,9 +229,7 @@ class List(BaseField):
         if value is not None:
             value = [self._element_type.to_python(element) for element in value]
 
-        self.validate(value)
-
-        return value
+        return super(List, self).to_python(value)
 
 
 class Map(BaseField):
@@ -390,9 +316,7 @@ class Map(BaseField):
                     _value[self._key_type.to_python(key)] = self._value_type.to_python(val)
                 value = _value
 
-        self.validate(value)
-
-        return value
+        return super(Map, self).to_python(value)
 
 
 class Reference(BaseField):
@@ -479,14 +403,10 @@ class Reference(BaseField):
         elif value is None:
             # Value empty, just instantiate empty `ref_class`
             value = self.ref_class()
-        #elif isinstance(value, list):
-        #    # Value maybe is list of `ref_class`
-        #    value = []
         else:
             raise ValueError("{!r} expected to be dict".format(value))
-        self.validate(value)
 
-        return value
+        return super(Reference, self).to_python(value)
 
 
 class Or(BaseField):
