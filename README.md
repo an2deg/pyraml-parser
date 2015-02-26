@@ -4,7 +4,7 @@ pyraml-parser - Python parser to RAML, the RESTful API Modeling Language.
 Introduction
 ============
 
-Implementation of a RAML parser for Python based on PyYAML. It is compliant with RAML 0.8
+Implementation of a RAML parser for Python based on PyYAML. It is compliant with RAML 0.8 http://raml.org/spec.html
 
 
 Installation
