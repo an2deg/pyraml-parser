@@ -1,7 +1,7 @@
 __author__ = 'ad'
 
 from model import Model
-from fields import String, Reference, Map, List, Bool, Int, Float, Or
+from fields import String, Reference, Map, List, Bool, Int, Float, Or, Null
 
 
 class RamlDocumentation(Model):
@@ -112,11 +112,14 @@ class RamlMethod(Model):
     headers = Map(String(), Reference(RamlNamedParameters))
     protocols = List(String())
     is_ = List(
-        Or(
-            String(),
-            Map(String(), Map(String(), String()))
-        ),
+        Or(String(),
+           Map(String(), Map(String(), String()))),
         field_name="is")
+    securedBy = List(
+        Or(String(),
+           Map(String(),
+               Map(String(), List(String()))),
+           Null()))
 
 
 class RamlResource(Model):
@@ -124,20 +127,22 @@ class RamlResource(Model):
     displayName = String()
     description = String()
     is_ = List(
-        Or(
-            String(),
-            Map(String(), Map(String(), String()))
-        ),
+        Or(String(),
+           Map(String(), Map(String(), String()))),
         field_name="is")
-    type = Or(
-        String(),
-        Map(String(),
-            Map(String(), String())))
+    type = Or(String(),
+              Map(String(),
+                  Map(String(), String())))
     parentResource = Reference("pyraml.entities.RamlResource")
     methods = Map(String(), Reference(RamlMethod))
     resources = Map(String(), Reference("pyraml.entities.RamlResource"))
     uriParameters = Map(String(), Reference(RamlNamedParameters))
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
+    securedBy = List(
+        Or(String(),
+           Map(String(),
+               Map(String(), List(String()))),
+           Null()))
 
 
 class RamlResourceType(Model):
@@ -164,3 +169,8 @@ class RamlRoot(Model):
     resourceTypes = Map(String(), Reference(RamlResourceType))
     schemas = List(Reference(RamlSchema))
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
+    securedBy = List(
+        Or(String(),
+           Map(String(),
+               Map(String(), List(String()))),
+           Null()))

@@ -37,6 +37,19 @@ class BaseField(object):
         return value
 
 
+class Null(BaseField):
+    """ Class represent JSON null """
+
+    def validate(self, value):
+        super(Null, self).validate(value)
+        if value is not None:
+            raise ValueError('Expected None, got {}'.format(value))
+
+    def to_python(self, value):
+        self.validate(value)
+        return value
+
+
 class String(BaseField):
     """
     Class represent JSON string type

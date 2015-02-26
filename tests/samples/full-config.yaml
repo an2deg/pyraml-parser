@@ -29,6 +29,7 @@ documentation:
     - title: section
       content: section content
 protocols: [HTTP, HTTPS]
+securedBy: [oauth_2_0: { scopes: [ foobar ] }, oauth_1_0, null]
 mediaType: application/json
 schemas:
     - league-json: |
@@ -168,7 +169,7 @@ traits:
                 knotty: {value: mingled}
             ]
         protocols: [HTTP]
-        securedBy: [oauth_2_0: { scopes: [ comments ] }]
+        securedBy: [oauth_2_0: { scopes: [ more comments ] }, oauth_1_0]
     post:
         body:
             application/json:

@@ -15,6 +15,7 @@ class RootParseTestCase(SampleParseTestCase):
         * documentation
         * schemas
         * protocols (root)
+        * securedBy (root)
     """
     def test_basic_root_parsed(self):
         data = self.load('full-config.yaml')
@@ -91,6 +92,16 @@ class RootParseTestCase(SampleParseTestCase):
     def test_root_mediatype_not_provided(self):
         data = self.load('null-elements.yaml')
         self.assertIsNone(data.mediaType, None)
+
+    def test_secured_by_parsed(self):
+        data = self.load('full-config.yaml')
+        self.assertEqual(len(data.securedBy), 3)
+        null, oauth2, oauth1 = sorted(data.securedBy)
+        self.assertIsNone(null)
+        self.assertDictEqual(oauth2, {
+            'oauth_2_0': {'scopes': ['foobar']}
+        })
+        self.assertEqual(oauth1, 'oauth_1_0')
 
 
 class InclusionTestCase(SampleParseTestCase):
@@ -377,6 +388,27 @@ class ResourceParseTestCase(SampleParseTestCase):
         self.assertEqual(
             data.resources['/'].methods['head'].is_,
             ['simple', {'knotty': {'value': 'mingled'}}])
+
+    def test_resource_secured_by_parsed(self):
+        data = self.load('full-config.yaml')
+        secured = data.resources['/'].securedBy
+        self.assertEqual(len(secured), 3)
+        null, oauth2, oauth1 = sorted(secured)
+        self.assertIsNone(null)
+        self.assertDictEqual(oauth2, {
+            'oauth_2_0': {'scopes': ['comments']}
+        })
+        self.assertEqual(oauth1, 'oauth_1_0')
+
+    def test_resource_method_secured_by_parsed(self):
+        data = self.load('full-config.yaml')
+        secured = data.resources['/'].methods['head'].securedBy
+        self.assertEqual(len(secured), 2)
+        oauth2, oauth1 = sorted(secured)
+        self.assertDictEqual(oauth2, {
+            'oauth_2_0': {'scopes': ['more comments']}
+        })
+        self.assertEqual(oauth1, 'oauth_1_0')
 
 
 class ResourceTypesParseTestCase(SampleParseTestCase):

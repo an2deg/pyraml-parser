@@ -192,13 +192,15 @@ def parse(c, relative_path):
         'documentation', RamlRoot.documentation)
     root.traits = context.get_property_with_schema(
         'traits', RamlRoot.traits)
+    root.securedBy = context.get_property_with_schema(
+        'securedBy', RamlRoot.securedBy)
     root.resourceTypes = parse_resource_types(context)
 
     resources = OrderedDict()
     for property_name in context.__iter__():
         if property_name.startswith("/"):
             resources[property_name] = parse_resource(
-                context, property_name, root, root.mediaType)
+                context, property_name, root)
 
     if resources > 0:
         root.resources = resources
@@ -206,7 +208,7 @@ def parse(c, relative_path):
     return root
 
 
-def parse_resource_methods(resource_ctx, global_media_type):
+def parse_resource_methods(resource_ctx):
     """ Parse existing HTTP_METHODS from a resource_ctx. """
     methods = OrderedDict()
     for _http_method in HTTP_METHODS:
@@ -215,14 +217,13 @@ def parse_resource_methods(resource_ctx, global_media_type):
         _method = resource_ctx.get(_http_method)
         if _method:
             methods[_http_method] = parse_method(
-                ParseContext(_method, resource_ctx.relative_path),
-                global_media_type)
+                ParseContext(_method, resource_ctx.relative_path))
         else:
             methods[_http_method] = RamlMethod(notNull=True)
     return methods
 
 
-def parse_resource(ctx, property_name, parent_object, global_media_type):
+def parse_resource(ctx, property_name, parent_object):
     """ Parse and extract resource with name.
 
 
@@ -258,9 +259,11 @@ def parse_resource(ctx, property_name, parent_object, global_media_type):
         RamlResource.is_.field_name, RamlResource.is_)
     resource.baseUriParameters = resource_ctx.get_property_with_schema(
         "baseUriParameters", RamlResource.baseUriParameters)
+    resource.securedBy = resource_ctx.get_property_with_schema(
+        'securedBy', RamlResource.securedBy)
 
     # Parse methods
-    methods = parse_resource_methods(resource_ctx, global_media_type)
+    methods = parse_resource_methods(resource_ctx)
     if methods:
         resource.methods = methods
 
@@ -269,7 +272,7 @@ def parse_resource(ctx, property_name, parent_object, global_media_type):
     for property_name in resource_ctx.__iter__():
         if property_name.startswith("/"):
             resources[property_name] = parse_resource(
-                resource_ctx, property_name, resource, global_media_type)
+                resource_ctx, property_name, resource)
 
     if resources:
         resource.resources = resources
@@ -304,7 +307,6 @@ def parse_resource_types(ctx):
 
     resource_types_context = ParseContext(resource_types, ctx.relative_path)
     resource_types = {}
-    global_media_type = ctx.get_string_property('mediaType')
 
     for rtype_name in resource_types_context:
         rtype_ctx = ParseContext(
@@ -315,7 +317,7 @@ def parse_resource_types(ctx):
         rtype_obj.description = rtype_ctx.get_string_property("description")
         rtype_obj.usage = rtype_ctx.get_string_property("usage")
 
-        methods = parse_resource_methods(rtype_ctx, global_media_type)
+        methods = parse_resource_methods(rtype_ctx)
         if methods:
             rtype_obj.methods = methods
         resource_types[rtype_name] = rtype_obj
@@ -323,7 +325,7 @@ def parse_resource_types(ctx):
     return resource_types
 
 
-def parse_method(ctx, global_media_type):
+def parse_method(ctx):
     """ Parse RAML resource method.
 
     Parsing happens in a separate function(here) because of need to
@@ -354,6 +356,8 @@ def parse_method(ctx, global_media_type):
         RamlMethod.is_.field_name, RamlMethod.is_)
     method.queryParameters = ctx.get_property_with_schema(
         "queryParameters", RamlMethod.queryParameters)
+    method.securedBy = ctx.get_property_with_schema(
+        'securedBy', RamlMethod.securedBy)
     return method
 
 
