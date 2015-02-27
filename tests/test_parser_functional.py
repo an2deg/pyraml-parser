@@ -214,8 +214,8 @@ class ResourceParseTestCase(SampleParseTestCase):
         self.assertEqual(len(mediaResource.baseUriParameters), 1)
         host = mediaResource.baseUriParameters['host']
         self.assertEqual(host.enum, ['api1'])
-        self.assertIsNone(host.description)
         self.assertIsNone(host.displayName)
+        self.assertIsNone(host.description)
         self.assertIsNone(host.pattern)
 
     def test_method_uriparameters_parsed(self):
@@ -475,9 +475,12 @@ class TraitsParseTestCase(SampleParseTestCase):
         data = self.load('full-config.yaml')
         xord = data.traits['orderable'].headers['X-Ordering']
         self.assertEqual(len(data.traits['orderable'].headers), 1)
-        self.assertEqual(xord.displayName, 'Ordering')
-        self.assertEqual(xord.type, 'string')
-        self.assertListEqual(xord.enum, ['desc', 'asc'])
+        self.assertEqual(len(xord), 2)
+        self.assertEqual(xord[0].type, 'string')
+        self.assertListEqual(xord[0].enum, ['desc', 'asc'])
+        self.assertEqual(xord[1].type, 'integer')
+        self.assertEqual(xord[1].minimum, 0)
+        self.assertEqual(xord[1].maximum, 1)
 
     def test_traits_queryparameters_parsed(self):
         data = self.load('full-config.yaml')

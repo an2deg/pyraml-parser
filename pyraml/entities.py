@@ -3,7 +3,7 @@ __author__ = 'ad'
 from model import Model
 from fields import (
     String, Reference, Map, List, Bool, Int, Float, Or, Null,
-    Choice)
+    Choice, RamlNamedParametersMap)
 from constants import NAMED_PARAMETER_TYPES, RAML_VALID_PROTOCOLS
 
 
@@ -81,11 +81,7 @@ class RamlBody(Model):
     schema = String()
     example = String()
     notNull = Bool()
-    formParameters = Map(
-        String(),
-        Or(Reference(RamlNamedParameters),
-           List(Reference(RamlNamedParameters)))
-    )
+    formParameters = RamlNamedParametersMap()
 
 
 class RamlResponse(Model):
@@ -95,7 +91,7 @@ class RamlResponse(Model):
     """
     notNull = Bool()
     description = String()
-    headers = Map(String(), Reference(RamlNamedParameters))
+    headers = RamlNamedParametersMap()
     body = Map(String(), Reference("pyraml.entities.RamlBody"))
 
 
@@ -106,8 +102,8 @@ class RamlTrait(Model):
     """
     usage = String()
     description = String()
-    headers = Map(String(), Reference(RamlNamedParameters))
-    queryParameters = Map(String(), Reference(RamlNamedParameters))
+    headers = RamlNamedParametersMap()
+    queryParameters = RamlNamedParametersMap()
     responses = Map(Int(), Reference(RamlResponse))
 
 
@@ -117,9 +113,9 @@ class RamlMethod(TraitedEntity, SecuredEntity, Model):
     description = String()
     body = Map(String(), Reference(RamlBody))
     responses = Map(Int(), Reference(RamlResponse))
-    queryParameters = Map(String(), Reference(RamlNamedParameters))
-    baseUriParameters = Map(String(), Reference(RamlNamedParameters))
-    headers = Map(String(), Reference(RamlNamedParameters))
+    queryParameters = RamlNamedParametersMap()
+    baseUriParameters = RamlNamedParametersMap()
+    headers = RamlNamedParametersMap()
     protocols = List(Choice(
         field_name='protocols',
         choices=RAML_VALID_PROTOCOLS))
@@ -132,8 +128,8 @@ class RamlResource(ResourceTypedEntity, TraitedEntity, SecuredEntity, Model):
     parentResource = Reference("pyraml.entities.RamlResource")
     methods = Map(String(), Reference(RamlMethod))
     resources = Map(String(), Reference("pyraml.entities.RamlResource"))
-    uriParameters = Map(String(), Reference(RamlNamedParameters))
-    baseUriParameters = Map(String(), Reference(RamlNamedParameters))
+    uriParameters = RamlNamedParametersMap()
+    baseUriParameters = RamlNamedParametersMap()
 
 
 class RamlResourceType(Model):
@@ -154,10 +150,10 @@ class RamlSecuritySchemeDescription(Model):
     """
     description = String()
     body = Map(String(), Reference(RamlBody))
-    headers = Map(String(), Reference(RamlNamedParameters))
-    queryParameters = Map(String(), Reference(RamlNamedParameters))
+    headers = RamlNamedParametersMap()
+    queryParameters = RamlNamedParametersMap()
     responses = Map(Int(), Reference(RamlResponse))
-    baseUriParameters = Map(String(), Reference(RamlNamedParameters))
+    baseUriParameters = RamlNamedParametersMap()
     protocols = List(Choice(
         field_name='protocols',
         choices=RAML_VALID_PROTOCOLS))
@@ -188,5 +184,5 @@ class RamlRoot(SecuredEntity, Model):
     resources = Map(String(), Reference(RamlResource))
     resourceTypes = Map(String(), Reference(RamlResourceType))
     schemas = Map(String(), String())
-    baseUriParameters = Map(String(), Reference(RamlNamedParameters))
+    baseUriParameters = RamlNamedParametersMap()
     securitySchemes = Map(String(), Reference(RamlSecurityScheme))

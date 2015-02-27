@@ -2,7 +2,8 @@ from .base import SampleParseTestCase
 from pyraml.model import ValidationError
 
 
-class DefaultValuesParseTestCase(SampleParseTestCase):
+class DefaultValuesTestCase(SampleParseTestCase):
+    """ Test default values set while parsing. """
 
     def test_ramlnamedparameters_type_default_value(self):
         data = self.load('full-config.yaml')
@@ -10,6 +11,7 @@ class DefaultValuesParseTestCase(SampleParseTestCase):
 
 
 class ValidationTestCase(SampleParseTestCase):
+    """ Test validation and invalid values processing stuff. """
 
     def test_invalid_named_parameter_type(self):
         args = ('invalid', 'invalid-named-parameter-type.yaml')

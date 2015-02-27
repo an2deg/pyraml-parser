@@ -138,9 +138,11 @@ traits:
         description: Orderable trait desc
         headers:
             X-Ordering:
-                displayName: Ordering
-                type: string
-                enum: [desc, asc]
+                - type: string
+                  enum: [desc, asc]
+                - type: integer
+                  minimum: 0
+                  maximum: 1
         queryParameters:
             orderBy:
                 description: "Order by field: <<fieldsList>>"

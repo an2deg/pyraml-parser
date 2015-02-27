@@ -516,3 +516,18 @@ class Or(BaseField):
         else:
             # Raise ValueError
             self.validate(value)
+
+
+class RamlNamedParametersMap(Map):
+    """ Map of String to a list or a single instance of
+    RamlNamedParameters.
+    """
+    def __init__(self, *args, **kwargs):
+        from entities import RamlNamedParameters
+        key_type = String()
+        value_type = Or(
+            Reference(RamlNamedParameters),
+            List(Reference(RamlNamedParameters))
+        )
+        super(RamlNamedParametersMap, self).__init__(
+            key_type=key_type, value_type=value_type, **kwargs)
