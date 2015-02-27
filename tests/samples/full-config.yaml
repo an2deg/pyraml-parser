@@ -1,0 +1,291 @@
+#%RAML 0.8
+---
+title: Sample API
+version: v1
+baseUri: https://{host}.sample.com:{port}/{path}
+baseUriParameters:
+    host:
+        displayName: Host
+        description: host name
+        minLength: 5
+        maxLength: 10
+        pattern: '[a-z]*'
+    port:
+        type: integer
+        minimum: 1025
+        maximum: 65535
+        example: 8090
+        default: 8080
+        required: true
+    path:
+        type: string
+        enum: [one,two,three]
+documentation:
+    - title: Home
+      content: |
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+          eiusmod tempor incididunt ut labore et dolore magna...
+    - title: section
+      content: section content
+protocols: [HTTP, HTTPS]
+securedBy: [oauth_2_0: { scopes: [ foobar ] }, oauth_1_0, null]
+mediaType: application/json
+schemas:
+    - league-json: |
+        {
+            "title": "League Schema",
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "required": true
+                }
+            }
+        }
+    - league-xml: |
+        <?xml version="1.0" encoding="ISO-8859-1" ?>
+        <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+         elementFormDefault="qualified" xmlns="http://mulesoft.com/schemas/soccer"
+         targetNamespace="http://mulesoft.com/schemas/soccer">
+        <xs:element name="league">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="name" type="xs:string"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        </xs:schema>
+
+securitySchemes:
+    - oauth_2_0:
+        description: OAuth 2.0 for authenticating all API requests.
+        type: OAuth 2.0
+        describedBy:
+            description: foo
+            baseUriParameters:
+                host:
+                    enum: [ api3secured ]
+            queryParameters:
+                isSecured:
+                    displayName: Is secured
+                    type: integer
+            body:
+                application/json:
+                    schema: '{ "foo": "bar" }'
+                    example: '{ "input": "hola" }'
+            headers:
+                Authorization:
+                    description: Used to send a valid OAuth 2 access token.
+                    type: string
+            responses:
+                401:
+                    description: Bad or expired token
+                    body:
+                        application/json:
+                            example: '{ "message": "fail" }'
+                403:
+                    description: Bad OAuth request
+        settings:
+            authorizationUri: https://www.foobox.com/1/oauth2/authorize
+            accessTokenUri: https://api.foobox.com/1/oauth2/token
+            authorizationGrants: [code, token]
+            scopes: [ 'https://www.google.com/m8/feeds' ]
+    - oauth_1_0:
+        description: OAuth 1.0 continues to be supported for all API requests
+        type: OAuth 1.0
+        settings:
+            requestTokenUri: https://api.foobox.com/1/oauth/request_token
+            authorizationUri: https://www.foobox.com/1/oauth/authorize
+            tokenCredentialsUri: https://api.foobox.com/1/oauth/access_token
+
+resourceTypes:
+    - collection:
+        usage: Use when working with collections
+        description: Collection of available items.
+        post:
+            description: Add a new item.
+            queryParameters:
+                access_token:
+                    description: "The access token"
+                    example: AABBCCDD
+                    required: true
+                    type: string
+            body:
+                application/json:
+                    schema: <<resourcePathName>>
+                    example: <<exampleItem>>
+            responses:
+                200:
+                    body:
+                        application/json:
+                            example: '{ "message": "Foo" }'
+        get:
+    - basic:
+        usage: use this for basic operations
+    - complex:
+        description: complex desc
+
+traits:
+    - simple:
+        usage: simple trait
+    - knotty:
+        description: <<value>> trait
+    - orderable:
+        usage: Use to order items
+        description: Orderable trait desc
+        headers:
+            X-Ordering:
+                - type: string
+                  enum: [desc, asc]
+                - type: integer
+                  minimum: 0
+                  maximum: 1
+        queryParameters:
+            orderBy:
+                description: "Order by field: <<fieldsList>>"
+                type: string
+                required: false
+            order:
+                description: Order
+                enum: [desc, asc]
+                default: desc
+                required: true
+        responses:
+            200:
+                body:
+                    application/json:
+                        example: '{ "message": "Bar" }'
+
+/:
+    type: basic
+    securedBy: [oauth_2_0: { scopes: [ comments ] }, oauth_1_0, null]
+    displayName: Root resource
+    description: Root resource description
+    head:
+        is: [
+                simple,
+                knotty: {value: mingled}
+            ]
+        protocols: [HTTP]
+        securedBy: [oauth_2_0: { scopes: [ more comments ] }, oauth_1_0]
+    post:
+        body:
+            application/json:
+                schema: league-json
+/media:
+    type:
+        complex:
+            value: complicated
+    is: [ simple ]
+    displayName: Media collection
+    baseUriParameters:
+        host:
+            enum: [ api1 ]
+    head:
+        baseUriParameters:
+            host:
+                enum: [ api2 ]
+    get:
+        description: retrieve media
+        headers:
+            Zencoder-Api-Key:
+                displayName: Api key
+                description: Api key description
+                type: string
+                required: true
+                minLength: 10
+                maxLength: 10
+                example: 0123456789
+        queryParameters:
+            page:
+                displayName: Page
+                type: integer
+                default: 1
+                minimum: 1
+            offset:
+                displayName: Offset
+                description: Offset value
+                type: integer
+                minimum: 0
+                example: 2
+        body:
+            text/xml: !!null
+            application/json:
+                schema: |
+                    {
+                         "$schema": "http://json-schema.org/draft-03/schema",
+                         "properties": {
+                             "input": {
+                                 "required": false,
+                                 "type": "string"
+                             }
+                         },
+                         "required": false,
+                         "type": "object"
+                    }
+                example: '{ "input": "hola" }'
+            multipart/form-data:
+                formParameters:
+                    form-1:
+                        - displayName: form 1
+                          description: form 1 description
+                          type: number
+                          required: true
+                          minimum: 9.5
+                          maximum: 10.5
+                        - type: string
+                          enum: [one, two, three]
+                    form-2:
+                        type: boolean
+                        required: true
+            application/x-www-form-urlencoded:
+                formParameters:
+                    form-3:
+                        displayName: form 3
+                        type: number
+                    form-4:
+                        type: boolean
+                        required: true
+        responses:
+            200:
+                description: regular success response
+                headers:
+                    one:
+                        type: string
+                        required: true
+                    two:
+                        type: integer
+                body:
+                    application/json:
+                        example: '{ "key": "value" }'
+                        schema: league-json
+            400:
+                body:
+                    text/xml:
+                        example: '<root>none</root>'
+                    text/plain: !!null
+    /{mediaId}:
+        displayName: Media item
+        uriParameters:
+            mediaId:
+                type: string
+                maxLength: 10
+        head: !!null
+        get:
+            queryParameters:
+                length:
+                    displayName: length
+                    type: integer
+            responses:
+                200:
+                    body:
+                        application/json:
+                            example: '{ "Foo": "Bar" }'
+
+/tags:
+    head: !!null
+    /{tagId}:
+        head: !!null

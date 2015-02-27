@@ -1,7 +1,0 @@
-#%RAML 0.8
-title: sample
-/resource:
-    put:
-        body:
-            application/json:
-                schema: !include invalid.json

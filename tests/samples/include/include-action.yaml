@@ -1,0 +1,10 @@
+#%RAML 0.8
+---
+title: Sample API
+baseUri: https://{host}.sample.com:{port}
+baseUriParameters:
+    host:
+        displayName: Host
+        description: !include include-non-yaml-single-line.txt
+/simple:
+  get: !include get.yaml

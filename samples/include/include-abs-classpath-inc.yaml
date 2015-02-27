@@ -1,3 +1,0 @@
-/absolute:
-    description: absolute
-    /relative: !include include-rel-classpath-inc.yaml

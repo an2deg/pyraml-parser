@@ -4,7 +4,7 @@ pyraml-parser - Python parser to RAML, the RESTful API Modeling Language.
 Introduction
 ============
 
-Implementation of a RAML parser for Python based on PyYAML. It is compliant with RAML 0.8
+Implementation of a RAML parser for Python based on PyYAML. It is compliant with RAML 0.8 http://raml.org/spec.html
 
 
 Installation
@@ -18,15 +18,18 @@ The pyraml package can be installed with ``pip`` or ``easy_install`` from GIT re
 Developing pyraml-paser
 -----------------------
 
-You may need to install package ``nosetests`` for running pyraml-parser tests. The project provides helper script
-``run-tests.py`` which executes all tests inside directory tests and it supports all ``nosetests`` parameters.
+You may need to install package ``nose`` and ``mock`` for running pyraml-parser tests.
 
 Typical installation process for developing purposes:
 
     $ git clone git@github.com:an2deg/pyraml-parser.git
     $ cd pyraml-parser
-    $ pip install nosetests
+    $ pip install nose mock
     $ python setup.py develop
+
+To run tests use:
+
+    $ python -m nose
 
 
 Using pyraml-parser

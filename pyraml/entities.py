@@ -1,27 +1,58 @@
 __author__ = 'ad'
 
 from model import Model
-from fields import String, Reference, Map, List, Bool, Int, Float, Or
+from fields import (
+    String, Reference, Map, List, Bool, Int, Float, Or, Null,
+    Choice, RamlNamedParametersMap)
+from constants import NAMED_PARAMETER_TYPES, RAML_VALID_PROTOCOLS
+
+
+class SecuredEntity(object):
+    # [foo, {bar: {baz: [buz]}}, null]
+    securedBy = List(
+        Or(String(),
+           Map(String(),
+               Map(String(), List(String()))),
+           Null()))
+
+
+class TraitedEntity(object):
+    """ Represents entities that may have traits specified
+    in ``is`` field.
+    """
+    is_ = List(
+        Or(String(),
+           Map(String(),
+               Map(String(), String()))),
+        field_name='is')
+
+
+class ResourceTypedEntity(object):
+    """ Represents entities that may have resourceTypes
+    specified in ``type`` field.
+    """
+    type = Or(String(),
+              Map(String(),
+                  Map(String(), String())))
 
 
 class RamlDocumentation(Model):
-    content = String()
-    title = String()
+    """ The documentation property MUST be an array of documents.
+    Each document MUST contain title and content attributes, both
+    of which are REQUIRED. If the documentation property is specified,
+    it MUST include at least one document.
+    """
+    title = String(required=True)
+    content = String(required=True)
 
 
-class RamlSchema(Model):
-    name = String()
-    type = String()
-    schema = String()
-    example = String()
-
-
-class RamlQueryParameter(Model):
-    name = String()
-    description = String()
-    example = Or(String(), Int(), Float())
+class RamlNamedParameters(Model):
+    """ http://raml.org/spec.html#named-parameters """
     displayName = String()
-    type = String()
+    description = String()
+    type = Choice(default='string', choices=NAMED_PARAMETER_TYPES)
+    name = String()
+    example = Or(String(), Int(), Float())
     enum = List(Or(String(), Float(), Int()))
     pattern = String()
     minLength = Int()
@@ -33,116 +64,125 @@ class RamlQueryParameter(Model):
     maximum = Or(Int(), Float())
 
 
-class RamlHeader(Model):
-    type = String()
-    required = Bool()
+class RamlQueryParameter(RamlNamedParameters):
+    """ Kept for compatibility reasons. """
+    pass
+
+
+class RamlHeader(RamlNamedParameters):
+    """ Kept for compatibility reasons. """
+    pass
 
 
 class RamlBody(Model):
+    """ A method's body is defined in the body property as a hashmap,
+    in which the key MUST be a valid media type.
+    """
     schema = String()
     example = String()
     notNull = Bool()
-    formParameters = Map(
-        String(),
-        Or(Reference(RamlQueryParameter),
-           List(Reference(RamlQueryParameter)))
-    )
-    headers = Map(String(), Reference(RamlHeader))
-    body = Map(String(), Reference("pyraml.entities.RamlBody"))
-    is_ = List(String(), field_name="is")
+    formParameters = RamlNamedParametersMap()
 
 
 class RamlResponse(Model):
-    schema = String()
-    example = String()
+    """ Responses MUST be a map of one or more HTTP status codes,
+    where each status code itself is a map that describes that status
+    code.
+    """
     notNull = Bool()
     description = String()
-    headers = Map(String(), Reference(RamlHeader))
-    body = Reference("pyraml.entities.RamlBody")
+    headers = RamlNamedParametersMap()
+    body = Map(String(), Reference("pyraml.entities.RamlBody"))
 
 
 class RamlTrait(Model):
+    """ A trait is a partial method definition that, like a method,
+    can provide method-level properties such as
+    description, headers, query string parameters, and responses.
     """
-    traits:
-      - secured:
-          usage: Apply this to any method that needs to be secured
-          description: Some requests require authentication.
-          queryParameters:
-            access_token:
-              description: Access Token
-              type: string
-              example: ACCESS_TOKEN
-              required: true
-    """
-
-    name = String()
     usage = String()
     description = String()
-    displayName = String()
+    headers = RamlNamedParametersMap()
+    queryParameters = RamlNamedParametersMap()
     responses = Map(Int(), Reference(RamlResponse))
-    method = String()
-    queryParameters = Map(String(), Reference(RamlQueryParameter))
-    body = Reference(RamlBody)
-    # Reference to another RamlTrait
-    is_ = List(String(), field_name="is")
 
 
-class RamlResourceType(Model):
-    methods = Map(String(), Reference(RamlTrait))
-    type = String()
-    is_ = List(String(), field_name="is")
-
-
-class RamlMethod(Model):
-    """
-    Example:
-        get:
-            description: ...
-            headers:
-                ....
-            queryParameters:
-                ...
-            body:
-                text/xml: !!null
-                application/json:
-                    schema: |
-                        {
-                            ....
-                        }
-            responses:
-                200:
-                    ....
-                <<:
-                    404:
-                        description: not found
-
-    """
+class RamlMethod(TraitedEntity, SecuredEntity, Model):
+    """ http://raml.org/spec.html#methods """
     notNull = Bool()
     description = String()
     body = Map(String(), Reference(RamlBody))
-    responses = Map(Int(), Reference(RamlBody))
-    queryParameters = Map(String(), Reference(RamlQueryParameter))
+    responses = Map(Int(), Reference(RamlResponse))
+    queryParameters = RamlNamedParametersMap()
+    baseUriParameters = RamlNamedParametersMap()
+    headers = RamlNamedParametersMap()
+    protocols = List(Choice(
+        field_name='protocols',
+        choices=RAML_VALID_PROTOCOLS))
 
 
-class RamlResource(Model):
+class RamlResource(ResourceTypedEntity, TraitedEntity, SecuredEntity, Model):
+    """ http://raml.org/spec.html#resources-and-nested-resources """
     displayName = String()
     description = String()
-    uri = String()
-    is_ = Reference(RamlTrait, field_name="is")
-    type = Reference(RamlResourceType)
     parentResource = Reference("pyraml.entities.RamlResource")
-    methods = Map(String(), Reference(RamlBody))
+    methods = Map(String(), Reference(RamlMethod))
     resources = Map(String(), Reference("pyraml.entities.RamlResource"))
+    uriParameters = RamlNamedParametersMap()
+    baseUriParameters = RamlNamedParametersMap()
 
 
-class RamlRoot(Model):
+class RamlResourceType(Model):
+    """ A resource type is a partial resource definition that,
+    like a resource, can specify a description and methods and
+    their properties.
+    """
+    usage = String()
+    description = String()
+    methods = Map(String(), Reference(RamlMethod))
+
+
+class RamlSecuritySchemeDescription(Model):
+    """ The describedBy attribute MAY be used to apply a trait-like
+    structure to a security scheme mechanism so as to extend the
+    mechanism, such as specifying response codes, HTTP headers or
+    custom documentation.
+    """
+    description = String()
+    body = Map(String(), Reference(RamlBody))
+    headers = RamlNamedParametersMap()
+    queryParameters = RamlNamedParametersMap()
+    responses = Map(Int(), Reference(RamlResponse))
+    baseUriParameters = RamlNamedParametersMap()
+    protocols = List(Choice(
+        field_name='protocols',
+        choices=RAML_VALID_PROTOCOLS))
+
+
+class RamlSecurityScheme(Model):
+    """ http://raml.org/spec.html#security """
+    description = String()
+    type = String()
+    describedBy = Reference(RamlSecuritySchemeDescription)
+    settings = Map(String(),
+                   Or(String(),
+                      List(String())))
+
+
+class RamlRoot(SecuredEntity, Model):
+    """ http://raml.org/spec.html#root-section """
     raml_version = String(required=True)
-    title = String()
+    title = String(required=True)
     version = String()
-    baseUri = String()
-    protocols = List(String())
+    baseUri = String(required=True)
+    protocols = List(Choice(
+        field_name='protocols',
+        choices=RAML_VALID_PROTOCOLS))
     mediaType = String()
     documentation = List(Reference(RamlDocumentation))
     traits = Map(String(), Reference(RamlTrait))
     resources = Map(String(), Reference(RamlResource))
     resourceTypes = Map(String(), Reference(RamlResourceType))
+    schemas = Map(String(), String())
+    baseUriParameters = RamlNamedParametersMap()
+    securitySchemes = Map(String(), Reference(RamlSecurityScheme))
