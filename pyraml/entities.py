@@ -1,7 +1,10 @@
 __author__ = 'ad'
 
 from model import Model
-from fields import String, Reference, Map, List, Bool, Int, Float, Or, Null
+from fields import (
+    String, Reference, Map, List, Bool, Int, Float, Or, Null,
+    Choice)
+from constants import NAMED_PARAMETER_TYPES, RAML_VALID_PROTOCOLS
 
 
 class SecuredEntity(object):
@@ -47,7 +50,7 @@ class RamlNamedParameters(Model):
     """ http://raml.org/spec.html#named-parameters """
     displayName = String()
     description = String()
-    type = String()
+    type = Choice(default='string', choices=NAMED_PARAMETER_TYPES)
     name = String()
     example = Or(String(), Int(), Float())
     enum = List(Or(String(), Float(), Int()))
@@ -117,7 +120,9 @@ class RamlMethod(TraitedEntity, SecuredEntity, Model):
     queryParameters = Map(String(), Reference(RamlNamedParameters))
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
     headers = Map(String(), Reference(RamlNamedParameters))
-    protocols = List(String())
+    protocols = List(Choice(
+        field_name='protocols',
+        choices=RAML_VALID_PROTOCOLS))
 
 
 class RamlResource(ResourceTypedEntity, TraitedEntity, SecuredEntity, Model):
@@ -153,7 +158,9 @@ class RamlSecuritySchemeDescription(Model):
     queryParameters = Map(String(), Reference(RamlNamedParameters))
     responses = Map(Int(), Reference(RamlResponse))
     baseUriParameters = Map(String(), Reference(RamlNamedParameters))
-    protocols = List(String())
+    protocols = List(Choice(
+        field_name='protocols',
+        choices=RAML_VALID_PROTOCOLS))
 
 
 class RamlSecurityScheme(Model):
@@ -172,7 +179,9 @@ class RamlRoot(SecuredEntity, Model):
     title = String(required=True)
     version = String()
     baseUri = String(required=True)
-    protocols = List(String())
+    protocols = List(Choice(
+        field_name='protocols',
+        choices=RAML_VALID_PROTOCOLS))
     mediaType = String()
     documentation = List(Reference(RamlDocumentation))
     traits = Map(String(), Reference(RamlTrait))

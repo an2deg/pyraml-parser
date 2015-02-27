@@ -13,3 +13,7 @@ HTTP_METHODS = {
     'connect', 'options', 'patch', 'trace',
     'get', 'post', 'put', 'delete', 'head',
 }
+NAMED_PARAMETER_TYPES = {
+    'string', 'number', 'integer',
+    'date', 'boolean',  'file',
+}

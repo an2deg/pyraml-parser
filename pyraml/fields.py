@@ -8,10 +8,16 @@ from collections import OrderedDict
 class BaseField(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, required=False, field_name=None):
+    def __init__(self, required=False, field_name=None, default=None):
         super(BaseField, self).__init__()
         self.required = required
         self.field_name = field_name
+        self.default = default
+
+    def check_default_value(self, value):
+        if value is None and self.default is not None:
+            value = self.default
+        return value
 
     def validate(self, value):
         """ Validate ``value``
@@ -35,6 +41,7 @@ class BaseField(object):
         representation. If not overriden, this method returns results
         of call to self.validate.
         """
+        value = self.check_default_value(value)
         self.validate(value)
         return value
 
@@ -46,6 +53,27 @@ class Null(BaseField):
         super(Null, self).validate(value)
         if value is not None:
             raise ValueError('Expected None, got {}'.format(value))
+
+
+class Choice(BaseField):
+    """ Field with a set of choices.
+
+    Choices may be of any type and provided value is
+    checked for inclusion in provided choices collection.
+    """
+    def __init__(self, choices=None, **kwargs):
+        super(Choice, self).__init__(**kwargs)
+        self._choices = choices or set()
+
+    def validate(self, value):
+        """ Check ``value`` is present in ``self._choices``.
+        """
+        super(Choice, self).validate(value)
+        if (value is not None) and (value not in self._choices):
+            raise ValueError(
+                "Got an unexpected value in the field `{}`: {}. "
+                "Value should be one of: {}.".format(
+                    self.field_name, value, self._choices))
 
 
 class String(BaseField):
@@ -220,6 +248,7 @@ class List(BaseField):
         :return: list
         :rtype: list
         """
+        value = self.check_default_value(value)
         if value is not None:
             value = [self._element_type.to_python(element) for element in value]
 
@@ -286,6 +315,7 @@ class Map(BaseField):
         :return: None
         """
         from pyraml.parser import ParseContext
+        value = self.check_default_value(value)
         if value is not None:
             # At this point we could get list of dict or dict
             if isinstance(value, ParseContext):
@@ -382,6 +412,7 @@ class Reference(BaseField):
         :rtype: int or long
         """
         self._lazy_import()
+        value = self.check_default_value(value)
 
         if hasattr(self.ref_class, 'notNull') and value is None:
             value = {'notNull': True}
@@ -474,6 +505,7 @@ class Or(BaseField):
 
         :return: first of accepted variant
         """
+        value = self.check_default_value(value)
         for field in self.variants:
             try:
                 res = field.to_python(value)
