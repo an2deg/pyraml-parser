@@ -94,7 +94,7 @@ class ParseContext(object):
     def get_string_property(self, property_name, required=False):
         property_value = self.get_property_with_schema(
             property_name,
-            String(required=required))
+            String(required=required, field_name=property_name))
         return property_value
 
     def get_property_with_schema(self, property_name, property_schema):

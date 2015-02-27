@@ -19,7 +19,9 @@ class BaseField(object):
         :raise ValueError: in case of validation errors
         """
         if value is None and self.required:
-            raise ValueError("Missed value for the required field")
+            raise ValueError(
+                "Missed value for the required field: {}".format(
+                    self.field_name))
 
     def from_python(self, value):
         """

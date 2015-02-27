@@ -30,7 +30,8 @@ class RootParseTestCase(SampleParseTestCase):
         self.assertTrue(hasattr(data, 'traits'))
         self.assertTrue(hasattr(data, 'resources'))
         self.assertTrue(hasattr(data, 'baseUriParameters'))
-        # self.assertTrue(hasattr(data, 'securitySchemes'))
+        self.assertTrue(hasattr(data, 'securitySchemes'))
+        self.assertTrue(hasattr(data, 'securedBy'))
 
     def test_root_baseuriparameters_parsed(self):
         data = self.load('full-config.yaml')
