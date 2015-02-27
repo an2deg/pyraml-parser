@@ -190,7 +190,8 @@ class ResourceParseTestCase(SampleParseTestCase):
     def test_name_desc_parsed(self):
         data = self.load('full-config.yaml')
         self.assertEqual(len(data.resources), 3)
-        self.assertListEqual(data.resources.keys(), ['/', '/tags', '/media'])
+        # Order or resources is preserved
+        self.assertListEqual(data.resources.keys(), ['/', '/media', '/tags'])
         self.assertEqual(data.resources['/'].displayName, 'Root resource')
         self.assertEqual(
             data.resources['/'].description,
