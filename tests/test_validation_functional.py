@@ -28,3 +28,15 @@ class ValidationTestCase(SampleParseTestCase):
             "IAmInvalidProtocol. Value should be one of:")
         self.assertRaisesRegexp(
             ValueError, expected, self.load, *args)
+
+    def test_invalid_json_schema_parsed_as_string(self):
+        data = self.load('invalid', 'invalid-schemas.yaml')
+        self.assertEqual(
+            data.schemas['invalid-json'].strip(),
+            '{{"foo": "bar"[]}')
+
+    def test_invalid_xml_schema_parsed_as_string(self):
+        data = self.load('invalid', 'invalid-schemas.yaml')
+        self.assertEqual(
+            data.schemas['invalid-xml'].strip(),
+            '<?xml version="1.0" encoding="ISO-8859-1" ?>')

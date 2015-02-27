@@ -49,8 +49,8 @@ schemas:
     - league-xml: |
         <?xml version="1.0" encoding="ISO-8859-1" ?>
         <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-         elementFormDefault="qualified" xmlns="http://mulesoft.com/schemas/soccer"
-         targetNamespace="http://mulesoft.com/schemas/soccer">
+         elementFormDefault="qualified" xmlns="http://example.com/schemas/soccer"
+         targetNamespace="http://example.com/schemas/soccer">
         <xs:element name="league">
           <xs:complexType>
             <xs:sequence>
@@ -77,6 +77,9 @@ securitySchemes:
                 application/json:
                     schema: '{ "foo": "bar" }'
                     example: '{ "input": "hola" }'
+                text/xml:
+                    schema: |
+                        <foo buz="biz"></foo>
             headers:
                 Authorization:
                     description: Used to send a valid OAuth 2 access token.
@@ -174,6 +177,9 @@ traits:
         securedBy: [oauth_2_0: { scopes: [ more comments ] }, oauth_1_0]
     post:
         body:
+            text/xml:
+                schema: |
+                    <foo bar="baz"></foo>
             application/json:
                 schema: league-json
 /media:

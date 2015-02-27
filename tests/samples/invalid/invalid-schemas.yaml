@@ -1,0 +1,11 @@
+#%RAML 0.8
+---
+title: Localhost API
+version: v1
+baseUri: http://localhost/api
+schemas:
+    - invalid-json: |
+        {{"foo": "bar"[]}
+
+    - invalid-xml: |
+        <?xml version="1.0" encoding="ISO-8859-1" ?>

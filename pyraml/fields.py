@@ -5,6 +5,9 @@ import importhelpers
 from abc import ABCMeta
 from collections import OrderedDict
 
+from lxml.etree import fromstring as parse_xml_string
+from lxml.etree import _Element as XMLElement
+
 
 class BaseField(object):
     __metaclass__ = ABCMeta
@@ -509,26 +512,52 @@ class Or(BaseField):
         return self.validate(value)
 
 
-class JSONData(BaseField):
-    """ Represents a JSON encoded data. """
+class EncodedDataBase(BaseField):
+    """ Base class for data that may be encoded in some format.
+
+    Subclasses must set ``result_type`` to a type which the final
+    result will have and define ``load_data`` that will perform
+    the loading operation itself.
+    """
+    result_type = None
 
     def validate(self, value):
         """ Validata value by trying to load it as JSON.
 
         If data is already a dict - just return the current value.
         """
-        super(JSONData, self).validate(value)
-        if value is not None:
-            if isinstance(value, dict):
-                return value
-            try:
-                return json.loads(value)
-            except Exception as ex:
-                raise ValueError(str(ex))
+        super(EncodedDataBase, self).validate(value)
+        if value is None:
+            return
+        if isinstance(value, self.result_type):
+            return value
+        try:
+            return self.load_data(value)
+        except Exception as ex:
+            raise ValueError(str(ex))
 
     def to_python(self, value):
         value = self.check_default_value(value)
         return self.validate(value)
+
+    def load_data(self, value):
+        raise NotImplementedError
+
+
+class JSONData(EncodedDataBase):
+    """ Represents a JSON encoded data. """
+    result_type = dict
+
+    def load_data(self, value):
+        return json.loads(value)
+
+
+class XMLData(EncodedDataBase):
+    """ Represents a XML encoded data. Uses lxml parsing library. """
+    result_type = XMLElement
+
+    def load_data(self, value):
+        return parse_xml_string(value)
 
 
 class RamlNamedParametersMap(Map):
