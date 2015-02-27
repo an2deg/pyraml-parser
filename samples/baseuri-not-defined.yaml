@@ -1,7 +1,0 @@
-#%RAML 0.8
----
-title: Sample API
-version: v1
-#baseUri: https://api.sample.com/
-/media:
-    displayName: Media

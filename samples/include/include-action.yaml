@@ -1,5 +1,0 @@
-#%RAML 0.8
----
-title: Sample API
-/simple:
-  get: !include get.yaml

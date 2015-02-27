@@ -7,8 +7,8 @@ class ValidationError(StandardError):
     def __init__(self, validation_errors):
         self.errors = validation_errors
 
-    def __repr__(self):
-        return u"ValidationError: " + repr(self.errors)
+    def __str__(self):
+        return repr(self.errors)
 
 
 class BaseModel(object):

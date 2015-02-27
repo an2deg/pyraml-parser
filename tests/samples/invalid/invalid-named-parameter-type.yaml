@@ -1,0 +1,8 @@
+#%RAML 0.8
+---
+title: Localhost API
+version: v1
+baseUri: http://localhost/api
+baseUriParameters:
+    host:
+        type: foobar

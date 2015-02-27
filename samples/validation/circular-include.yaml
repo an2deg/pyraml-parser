@@ -1,3 +1,0 @@
-#%RAML 0.8
-title: circular reference
-/parent: !include circular1.raml

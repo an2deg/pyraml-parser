@@ -1,0 +1,13 @@
+#%RAML 0.8
+---
+title: Sample API
+version: v1
+baseUri: https://example.com
+/me:
+  get:
+    description: Get detailed profile information about the current user (including the current user’s username)
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include include/include-example.json

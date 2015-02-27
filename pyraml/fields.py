@@ -8,21 +8,26 @@ from collections import OrderedDict
 class BaseField(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, required=False, field_name=None):
+    def __init__(self, required=False, field_name=None, default=None):
         super(BaseField, self).__init__()
         self.required = required
         self.field_name = field_name
+        self.default = default
+
+    def check_default_value(self, value):
+        if value is None and self.default is not None:
+            value = self.default
+        return value
 
     def validate(self, value):
-        """
-        Validate `value`
+        """ Validate ``value``
 
         :raise ValueError: in case of validation errors
-
         """
-
         if value is None and self.required:
-            raise ValueError("missed value for required field")
+            raise ValueError(
+                "Missed value for the required field: {}".format(
+                    self.field_name))
 
     def from_python(self, value):
         """
@@ -32,11 +37,43 @@ class BaseField(object):
 
     def to_python(self, value):
         """
-        Do de-from_python steps from converting object from JSON
-        representation to python representation
+        Convert JSON representation of an object ``value`` to python
+        representation. If not overriden, this method returns results
+        of call to self.validate.
         """
+        value = self.check_default_value(value)
         self.validate(value)
         return value
+
+
+class Null(BaseField):
+    """ Class represent JSON null """
+
+    def validate(self, value):
+        super(Null, self).validate(value)
+        if value is not None:
+            raise ValueError('Expected None, got {}'.format(value))
+
+
+class Choice(BaseField):
+    """ Field with a set of choices.
+
+    Choices may be of any type and provided value is
+    checked for inclusion in provided choices collection.
+    """
+    def __init__(self, choices=None, **kwargs):
+        super(Choice, self).__init__(**kwargs)
+        self._choices = choices or set()
+
+    def validate(self, value):
+        """ Check ``value`` is present in ``self._choices``.
+        """
+        super(Choice, self).validate(value)
+        if (value is not None) and (value not in self._choices):
+            raise ValueError(
+                "Got an unexpected value in the field `{}`: {}. "
+                "Value should be one of: {}.".format(
+                    self.field_name, value, self._choices))
 
 
 class String(BaseField):
@@ -45,8 +82,6 @@ class String(BaseField):
 
      >>> some_field = String(max_len=1000)
      >>> some_field.to_python("Some thing") == "Some thing"
-
-
     """
 
     def __init__(self, max_len=None, **kwargs):
@@ -55,11 +90,6 @@ class String(BaseField):
 
         :param max_len: Restrict maximum length of the field
         :type max_len: int
-        :param force_conversion: Set to true in order to ignore real type of
-            a value and convert it into unicode. We have to have this parameter
-            b/c YAML format doesn't not have schema and string '17.30' is always
-            translated to float 17.30
-        :type force_conversion: bool
         """
         super(String, self).__init__(**kwargs)
         self._max_len = max_len
@@ -79,23 +109,9 @@ class String(BaseField):
             value_len = len(value)
             if value_len > self._max_len:
                 raise ValueError(
-                    "length of field is exceeds maximum allowed: {} but "
-                    "expect no more than {}".format(value_len, self._max_len))
-
-    def to_python(self, value):
-        """
-        Convert value to python representation
-
-        :param value: a string to process
-        :type value: basestring
-
-        :return: string
-        :rtype: basestring
-
-        """
-        self.validate(value)
-
-        return value
+                    "Length of field exceeds maximum allowed: {}."
+                    "Expected max length more than {}".format(
+                        value_len, self._max_len))
 
 
 class Bool(BaseField):
@@ -105,12 +121,7 @@ class Bool(BaseField):
      >>> some_field = Bool()
 
      >>> some_field.to_python(True) == True
-
     """
-
-    def __init__(self, **kwargs):
-        super(Bool, self).__init__(**kwargs)
-
     def validate(self, value):
         """
         Validate value to match rules
@@ -120,24 +131,8 @@ class Bool(BaseField):
         :return: None
         """
         super(Bool, self).validate(value)
-
-        if value is None:
-            return
-
-        if not isinstance(value, bool):
+        if (value is not None) and not isinstance(value, bool):
             raise ValueError("{!r} expected to be bool".format(value))
-
-    def to_python(self, value):
-        """
-        Convert value to python representation
-
-        :param value: a string to process
-        :type value: bool
-        :return: None
-        """
-        self.validate(value)
-
-        return value
 
 
 class Int(BaseField):
@@ -148,10 +143,6 @@ class Int(BaseField):
      >>> some_field.to_python(1) == 1
 
     """
-
-    def __init__(self, **kwargs):
-        super(Int, self).__init__(**kwargs)
-
     def validate(self, value):
         """
         Validate value to match rules
@@ -161,26 +152,8 @@ class Int(BaseField):
         :return: None
         """
         super(Int, self).validate(value)
-
-        if value is None:
-            return
-
-        if not isinstance(value, (int, long)):
+        if (value is not None) and not isinstance(value, (int, long)):
             raise ValueError("{!r} expected to be integer".format(value))
-
-    def to_python(self, value):
-        """
-        Convert value to python representation
-
-        :param value: a string to process
-        :type value: int or long
-
-        :return: int or long
-        :rtype: int or long
-        """
-        self.validate(value)
-
-        return value
 
 
 class Float(BaseField):
@@ -191,10 +164,6 @@ class Float(BaseField):
      >>> some_field.to_python(1.0) == 1.0
 
     """
-
-    def __init__(self, **kwargs):
-        super(Float, self).__init__(**kwargs)
-
     def validate(self, value):
         """
         Validate value to match rules
@@ -204,42 +173,23 @@ class Float(BaseField):
         :return: None
         """
         super(Float, self).validate(value)
-
-        if value is None:
-            return
-
-        if not isinstance(value, float):
+        if (value is not None) and not isinstance(value, float):
             raise ValueError(
                 "{!r} expected to be integer but got {}".format(
                     value, type(value).__name__))
-
-    def to_python(self, value):
-        """
-        Convert value to python representation
-
-        :param value: a string to process
-        :type value: float
-
-        :return: float
-        :rtype: float
-        """
-        self.validate(value)
-
-        return value
 
 
 class List(BaseField):
     """
     Class represent JSON list type
 
-     >>> some_field = List(String(max_len=100))
-     >>> some_field.to_python(["Some string"]) == ["Some string"]
+     >>> list_field = List(String(max_len=100))
+     >>> list_field.to_python(["Some string"]) == ["Some string"]
 
-     >>> some_field.to_python([2])
+     >>> list_field.to_python([2])
      Traceback (most recent call last):
      ...
      ValueError: '2' expected to be string
-
     """
 
     def __init__(self, element_type, min_len=None, max_len=None, **kwargs):
@@ -254,7 +204,7 @@ class List(BaseField):
         if not isinstance(element_type, BaseField):
             raise ValueError(
                 "Invalid type of 'element_type': expected to be instance of "
-                "subclass of BaseField but it is {!r}".format(element_type))
+                "subclass of BaseField but got {!r}".format(element_type))
         self._min_len = min_len
         self._max_len = max_len
         self._element_type = element_type
@@ -267,7 +217,6 @@ class List(BaseField):
         :type value: list
         :return: None
         """
-
         super(List, self).validate(value)
 
         if value is None:
@@ -277,15 +226,17 @@ class List(BaseField):
             raise ValueError("{!r} expected to be list".format(value))
 
         value_len = len(value)
-        if self._max_len is not None and value_len > self._max_len:
+        if (self._max_len is not None) and (value_len > self._max_len):
             raise ValueError(
-                "length of field is exceeds maximum allowed: {} but expect "
-                "no more than {}".format(value_len, self._max_len))
+                "Length of field exceeds maximum allowed: {}. "
+                "Expected value of length not more than {}".format(
+                    value_len, self._max_len))
 
-        if self._min_len is not None and value_len < self._min_len:
+        if (self._min_len is not None) and (value_len < self._min_len):
             raise ValueError(
-                "length of field is less than minimum allowed: {} "
-                "but expect no less than {}".format(value_len, self._max_len))
+                "Length of field is less than minimum allowed: {}."
+                "Expected value of length not less than {}".format(
+                    value_len, self._max_len))
 
     def to_python(self, value):
         """
@@ -297,12 +248,11 @@ class List(BaseField):
         :return: list
         :rtype: list
         """
+        value = self.check_default_value(value)
         if value is not None:
             value = [self._element_type.to_python(element) for element in value]
 
-        self.validate(value)
-
-        return value
+        return super(List, self).to_python(value)
 
 
 class Map(BaseField):
@@ -316,15 +266,11 @@ class Map(BaseField):
      Traceback (most recent call last):
      ...
      ValueError: '2' expected to be string
-
     """
 
     def __init__(self, key_type, value_type, **kwargs):
         """
         Constructor for List field type
-
-        :param element_type: list element type
-        :type element_type: instance of BaseField
         """
         super(Map, self).__init__(**kwargs)
 
@@ -368,8 +314,12 @@ class Map(BaseField):
         :type value: list or dict
         :return: None
         """
+        from pyraml.parser import ParseContext
+        value = self.check_default_value(value)
         if value is not None:
             # At this point we could get list of dict or dict
+            if isinstance(value, ParseContext):
+                value = value.data
             if isinstance(value, list):
                 _value = OrderedDict()
                 for item in value:
@@ -389,9 +339,7 @@ class Map(BaseField):
                     _value[self._key_type.to_python(key)] = self._value_type.to_python(val)
                 value = _value
 
-        self.validate(value)
-
-        return value
+        return super(Map, self).to_python(value)
 
 
 class Reference(BaseField):
@@ -410,7 +358,6 @@ class Reference(BaseField):
      Traceback (most recent call last):
      ...
      ValueError: '2' expected to be RamlDocumentation
-
     """
 
     def __init__(self, ref_class, **kwargs):
@@ -451,7 +398,7 @@ class Reference(BaseField):
             return
 
         if not isinstance(value, self.ref_class):
-            raise ValueError("{!r} expected to be {}".format(
+            raise ValueError("{!r} expected to be {} or dict".format(
                 value, self.ref_class))
 
     def to_python(self, value):
@@ -465,6 +412,10 @@ class Reference(BaseField):
         :rtype: int or long
         """
         self._lazy_import()
+        value = self.check_default_value(value)
+
+        if hasattr(self.ref_class, 'notNull') and value is None:
+            value = {'notNull': True}
 
         if isinstance(value, self.ref_class):
             # Value is already instance of ref_class, don't need to convert it
@@ -475,14 +426,11 @@ class Reference(BaseField):
         elif value is None:
             # Value empty, just instantiate empty `ref_class`
             value = self.ref_class()
-        #elif isinstance(value, list):
-        #    # Value maybe is list of `ref_class`
-        #    value = []
         else:
-            raise ValueError("{!r} expected to be dict".format(value))
-        self.validate(value)
+            raise ValueError("{!r} expected to be {} or dict".format(
+                value, self.ref_class))
 
-        return value
+        return super(Reference, self).to_python(value)
 
 
 class Or(BaseField):
@@ -557,7 +505,7 @@ class Or(BaseField):
 
         :return: first of accepted variant
         """
-
+        value = self.check_default_value(value)
         for field in self.variants:
             try:
                 res = field.to_python(value)
@@ -568,3 +516,18 @@ class Or(BaseField):
         else:
             # Raise ValueError
             self.validate(value)
+
+
+class RamlNamedParametersMap(Map):
+    """ Map of String to a list or a single instance of
+    RamlNamedParameters.
+    """
+    def __init__(self, *args, **kwargs):
+        from entities import RamlNamedParameters
+        key_type = String()
+        value_type = Or(
+            Reference(RamlNamedParameters),
+            List(Reference(RamlNamedParameters))
+        )
+        super(RamlNamedParametersMap, self).__init__(
+            key_type=key_type, value_type=value_type, **kwargs)
