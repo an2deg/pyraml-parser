@@ -91,12 +91,6 @@ class ParseContext(object):
     def __iter__(self):
         return iter(self.data)
 
-    def get_string_property(self, property_name, required=False):
-        property_value = self.get_property_with_schema(
-            property_name,
-            String(required=required, field_name=property_name))
-        return property_value
-
     def get_property_with_schema(self, property_name, property_schema):
         property_value = self.get(property_name)
         return property_schema.to_python(property_value)
@@ -176,11 +170,15 @@ def parse(c, relative_path):
     context.preload_included_resources()
 
     root = RamlRoot(raml_version=raml_version)
-    root.title = context.get_string_property('title', True)
-    root.baseUri = context.get_string_property('baseUri')
+    root.title = context.get_property_with_schema(
+        'title', RamlRoot.title)
+    root.baseUri = context.get_property_with_schema(
+        'baseUri', RamlRoot.baseUri)
     root.protocols = parse_protocols(context, root.baseUri)
-    root.version = context.get('version')
-    root.mediaType = context.get_string_property('mediaType')
+    root.version = context.get_property_with_schema(
+        'version', RamlRoot.version)
+    root.mediaType = context.get_property_with_schema(
+        'mediaType', RamlRoot.mediaType)
     root.schemas = context.get_property_with_schema(
         'schemas', RamlRoot.schemas)
     root.baseUriParameters = context.get_property_with_schema(
@@ -248,8 +246,10 @@ def parse_resource(ctx, property_name, parent_object):
 
     resource = RamlResource()
     resource_ctx = ParseContext(property_value, ctx.relative_path)
-    resource.description = resource_ctx.get_string_property("description")
-    resource.displayName = resource_ctx.get_string_property("displayName")
+    resource.description = resource_ctx.get_property_with_schema(
+        "description", RamlResource.description)
+    resource.displayName = resource_ctx.get_property_with_schema(
+        "displayName", RamlResource.displayName)
     resource.uriParameters = resource_ctx.get_property_with_schema(
         "uriParameters", RamlResource.uriParameters)
     resource.type = resource_ctx.get_property_with_schema(
@@ -313,8 +313,10 @@ def parse_resource_types(ctx):
             resource_types_context.relative_path)
 
         rtype_obj = RamlResourceType()
-        rtype_obj.description = rtype_ctx.get_string_property("description")
-        rtype_obj.usage = rtype_ctx.get_string_property("usage")
+        rtype_obj.description = rtype_ctx.get_property_with_schema(
+            "description", RamlResourceType.description)
+        rtype_obj.usage = rtype_ctx.get_property_with_schema(
+            "usage", RamlResourceType.description)
 
         methods = parse_resource_methods(rtype_ctx)
         if methods:
@@ -341,7 +343,8 @@ def parse_method(ctx):
     """
 
     method = RamlMethod()
-    method.description = ctx.get_string_property("description")
+    method.description = ctx.get_property_with_schema(
+        "description", RamlMethod.description)
     method.body = ctx.get_property_with_schema("body", RamlMethod.body)
     method.baseUriParameters = ctx.get_property_with_schema(
         "baseUriParameters", RamlMethod.baseUriParameters)

@@ -173,7 +173,7 @@ class RamlRoot(SecuredEntity, Model):
     """ http://raml.org/spec.html#root-section """
     raml_version = String(required=True)
     title = String(required=True)
-    version = String()
+    version = Or(String(), Int(), Float())
     baseUri = String(required=True)
     protocols = List(Choice(
         field_name='protocols',

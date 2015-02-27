@@ -2,6 +2,7 @@
 ---
 title: Example API
 version: v1
+baseUri: http://example.com
 resourceTypes: !include resource-type-sequence.yaml
 
 /simple:
