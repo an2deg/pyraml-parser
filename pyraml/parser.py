@@ -9,12 +9,11 @@ import yaml
 from collections import OrderedDict
 
 from raml_elements import ParserRamlInclude
-from fields import String
 from entities import (
     RamlRoot, RamlResource, RamlMethod, RamlResourceType)
 from constants import (
     RAML_SUPPORTED_FORMAT_VERSION, RAML_CONTENT_MIME_TYPES,
-    RAML_VALID_PROTOCOLS, HTTP_METHODS)
+    HTTP_METHODS)
 
 
 __all__ = ["RamlException", "RamlNotFoundException", "RamlParseException",

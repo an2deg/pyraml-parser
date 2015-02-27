@@ -33,6 +33,7 @@ mediaType: application/json
 schemas:
     - league-json: |
         {
+            "$schema": "http://json-schema.org/draft-03/schema",
             "title": "League Schema",
             "type": "object",
             "properties": {

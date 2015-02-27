@@ -3,7 +3,7 @@ __author__ = 'ad'
 from model import Model
 from fields import (
     String, Reference, Map, List, Bool, Int, Float, Or, Null,
-    Choice, RamlNamedParametersMap)
+    Choice, RamlNamedParametersMap, JSONData)
 from constants import NAMED_PARAMETER_TYPES, RAML_VALID_PROTOCOLS
 
 
@@ -78,7 +78,7 @@ class RamlBody(Model):
     """ A method's body is defined in the body property as a hashmap,
     in which the key MUST be a valid media type.
     """
-    schema = String()
+    schema = Or(JSONData(), String())
     example = String()
     notNull = Bool()
     formParameters = RamlNamedParametersMap()
@@ -183,6 +183,6 @@ class RamlRoot(SecuredEntity, Model):
     traits = Map(String(), Reference(RamlTrait))
     resources = Map(String(), Reference(RamlResource))
     resourceTypes = Map(String(), Reference(RamlResourceType))
-    schemas = Map(String(), String())
+    schemas = Map(String(), Or(JSONData(), String()))
     baseUriParameters = RamlNamedParametersMap()
     securitySchemes = Map(String(), Reference(RamlSecurityScheme))

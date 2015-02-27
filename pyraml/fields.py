@@ -1,7 +1,8 @@
 __author__ = 'ad'
 
-from abc import ABCMeta
+import json
 import importhelpers
+from abc import ABCMeta
 from collections import OrderedDict
 
 
@@ -303,8 +304,8 @@ class Map(BaseField):
             raise ValueError("{!r} expected to be dict".format(value))
 
         for key, val in value.iteritems():
-            self._key_type.validate(key)
-            self._value_type.validate(val)
+            self._key_type.to_python(key)
+            self._value_type.to_python(val)
 
     def to_python(self, value):
         """
@@ -486,8 +487,7 @@ class Or(BaseField):
 
         for field in self.variants:
             try:
-                field.validate(value)
-                break
+                return field.to_python(value)
             except ValueError:
                 pass
         else:
@@ -506,16 +506,29 @@ class Or(BaseField):
         :return: first of accepted variant
         """
         value = self.check_default_value(value)
-        for field in self.variants:
+        return self.validate(value)
+
+
+class JSONData(BaseField):
+    """ Represents a JSON encoded data. """
+
+    def validate(self, value):
+        """ Validata value by trying to load it as JSON.
+
+        If data is already a dict - just return the current value.
+        """
+        super(JSONData, self).validate(value)
+        if value is not None:
+            if isinstance(value, dict):
+                return value
             try:
-                res = field.to_python(value)
-                field.validate(res)
-                return res
-            except ValueError:
-                pass
-        else:
-            # Raise ValueError
-            self.validate(value)
+                return json.loads(value)
+            except Exception as ex:
+                raise ValueError(str(ex))
+
+    def to_python(self, value):
+        value = self.check_default_value(value)
+        return self.validate(value)
 
 
 class RamlNamedParametersMap(Map):

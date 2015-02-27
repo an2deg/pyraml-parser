@@ -68,10 +68,23 @@ class RootParseTestCase(SampleParseTestCase):
         self.assertEqual(docs[1].title, 'section')
         self.assertEqual(docs[1].content, 'section content')
 
-    def test_schemas_parsed(self):
+    def test_root_schemas_parsed(self):
         data = self.load('full-config.yaml')
         self.assertEqual(len(data.schemas), 2)
-        self.assertIn('"type": "object"', data.schemas['league-json'])
+        self.assertDictEqual(data.schemas['league-json'], {
+            "$schema": "http://json-schema.org/draft-03/schema",
+            "title": "League Schema",
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "required": True
+                }
+            }
+        })
         self.assertIn(
             '<?xml version="1.0" encoding="ISO-8859-1" ?>',
             data.schemas['league-xml'])
@@ -301,9 +314,17 @@ class ResourceParseTestCase(SampleParseTestCase):
         data = self.load('full-config.yaml')
         body = data.resources['/media'].methods['get'].body
         appjson = body['application/json']
-        self.assertIn(
-            '"$schema": "http://json-schema.org/draft-03/schema"',
-            appjson.schema)
+        self.assertDictEqual(appjson.schema, {
+            "$schema": "http://json-schema.org/draft-03/schema",
+            "properties": {
+                "input": {
+                    "required": False,
+                    "type": "string"
+                }
+            },
+            "required": False,
+            "type": "object"
+        })
         self.assertEqual(appjson.example, '{ "input": "hola" }')
         self.assertIsNone(appjson.formParameters)
 
@@ -566,7 +587,7 @@ class SecuritySchemesParseTestCase(SampleParseTestCase):
         body = data.securitySchemes['oauth_2_0'].describedBy.body
         self.assertEqual(len(body), 1)
         appjson = body['application/json']
-        self.assertEqual(appjson.schema, '{ "foo": "bar" }')
+        self.assertDictEqual(appjson.schema, {"foo": "bar"})
         self.assertEqual(appjson.example, '{ "input": "hola" }')
         self.assertIsNone(appjson.formParameters)
 
