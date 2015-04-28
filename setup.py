@@ -11,7 +11,6 @@ setup(
     description='Python parser for RAML.',
     long_description=open('README.md').read(),
     install_requires=[
-        'lxml==3.4.2',
         'setuptools',
         'PyYAML>=3.10',
         'importhelpers>=0.2'
