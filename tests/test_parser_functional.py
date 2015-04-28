@@ -2,8 +2,11 @@ from .base import SampleParseTestCase
 from pyraml import entities
 
 from mock import patch
-from xml.etree.ElementTree import _Element as XMLElement
 
+try:
+    from lxml.etree import _Element as XMLElement
+except ImportError:
+    from xml.etree.ElementTree import _Element as XMLElement
 
 class RootParseTestCase(SampleParseTestCase):
     """ Test parsing of:
