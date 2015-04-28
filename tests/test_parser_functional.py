@@ -2,8 +2,11 @@ from .base import SampleParseTestCase
 from pyraml import entities
 
 from mock import patch
-from lxml.etree import _Element as XMLElement
 
+try:
+    from lxml.etree import _Element as XMLElement
+except ImportError:
+    from xml.etree.ElementTree import _Element as XMLElement
 
 class RootParseTestCase(SampleParseTestCase):
     """ Test parsing of:
@@ -88,11 +91,10 @@ class RootParseTestCase(SampleParseTestCase):
         })
         self.assertIsInstance(data.schemas['league-xml'], XMLElement)
         self.assertListEqual(
-            data.schemas['league-xml'].keys(),
-            ['elementFormDefault', 'targetNamespace'])
-        self.assertListEqual(
-            data.schemas['league-xml'].values(),
-            ['qualified', 'http://example.com/schemas/soccer'])
+            data.schemas['league-xml'].items(), [
+                ('elementFormDefault', 'qualified'),
+                ('targetNamespace', 'http://example.com/schemas/soccer')
+            ])
 
     def test_schemas_not_provided(self):
         data = self.load('null-elements.yaml')
@@ -337,8 +339,7 @@ class ResourceParseTestCase(SampleParseTestCase):
         data = self.load('full-config.yaml')
         body = data.resources['/'].methods['post'].body
         self.assertIsInstance(body['text/xml'].schema, XMLElement)
-        self.assertEqual(body['text/xml'].schema.keys(), ['bar'])
-        self.assertEqual(body['text/xml'].schema.values(), ['baz'])
+        self.assertEqual(body['text/xml'].schema.items(), [('bar', 'baz')])
 
     def test_method_body_named_schema_parsed(self):
         data = self.load('full-config.yaml')
@@ -604,8 +605,7 @@ class SecuritySchemesParseTestCase(SampleParseTestCase):
         self.assertIsNone(appjson.formParameters)
         xmlbody = body['text/xml']
         self.assertIsInstance(xmlbody.schema, XMLElement)
-        self.assertEqual(xmlbody.schema.keys(), ['buz'])
-        self.assertEqual(xmlbody.schema.values(), ['biz'])
+        self.assertEqual(xmlbody.schema.items(), [('buz', 'biz')])
 
     def test_describedby_headers_parsed(self):
         data = self.load('full-config.yaml')

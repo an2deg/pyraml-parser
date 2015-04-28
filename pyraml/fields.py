@@ -5,9 +5,12 @@ import importhelpers
 from abc import ABCMeta
 from collections import OrderedDict
 
-from lxml.etree import fromstring as parse_xml_string
-from lxml.etree import _Element as XMLElement
-
+try:
+    from lxml.etree import fromstring as parse_xml_string
+    from lxml.etree import _Element as XMLElement
+except ImportError:
+    from xml.etree.ElementTree import fromstring as parse_xml_string
+    from xml.etree.ElementTree import _Element as XMLElement
 
 class BaseField(object):
     __metaclass__ = ABCMeta
@@ -553,7 +556,7 @@ class JSONData(EncodedDataBase):
 
 
 class XMLData(EncodedDataBase):
-    """ Represents a XML encoded data. Uses lxml parsing library. """
+    """ Represents a XML encoded data. Uses built-in xml parsing library. """
     result_type = XMLElement
 
     def load_data(self, value):
