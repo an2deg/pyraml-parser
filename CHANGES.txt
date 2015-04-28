@@ -1,0 +1,13 @@
+0.1.2 (2015-04-28)
+==================
+
+Features
+--------
+
+- Made lxml an optional requirement - it is used if installed, python's
+  builtin xml parsing library is used otherwise.
+
+Deprecations
+------------
+
+- Deleted not used run-tests.py script
