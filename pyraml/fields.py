@@ -1,7 +1,7 @@
 __author__ = 'ad'
 
+import six
 import json
-import importhelpers
 from abc import ABCMeta
 from collections import OrderedDict
 
@@ -10,11 +10,10 @@ try:
     from lxml.etree import _Element as XMLElement
 except ImportError:
     from xml.etree.ElementTree import fromstring as parse_xml_string
-    from xml.etree.ElementTree import _Element as XMLElement
+    from xml.etree.ElementTree import Element as XMLElement
 
+@six.add_metaclass(ABCMeta)
 class BaseField(object):
-    __metaclass__ = ABCMeta
-
     def __init__(self, required=False, field_name=None, default=None):
         super(BaseField, self).__init__()
         self.required = required
@@ -107,7 +106,7 @@ class String(BaseField):
         if value is None:
             return
 
-        if not isinstance(value, basestring):
+        if not isinstance(value, six.string_types):
             raise ValueError(
                 "{!r} expected to be string but got {}".format(
                     value, type(value).__name__))
@@ -159,7 +158,7 @@ class Int(BaseField):
         :return: None
         """
         super(Int, self).validate(value)
-        if (value is not None) and not isinstance(value, (int, long)):
+        if (value is not None) and not isinstance(value, six.integer_types):
             raise ValueError("{!r} expected to be integer".format(value))
 
 
@@ -309,7 +308,7 @@ class Map(BaseField):
         if not isinstance(value, dict):
             raise ValueError("{!r} expected to be dict".format(value))
 
-        for key, val in value.iteritems():
+        for key, val in value.items():
             self._key_type.to_python(key)
             self._value_type.to_python(val)
 
@@ -342,7 +341,7 @@ class Map(BaseField):
                 value = _value
             else:
                 _value = OrderedDict()
-                for key, val in value.iteritems():
+                for key, val in value.items():
                     _value[self._key_type.to_python(key)] = self._value_type.to_python(val)
                 value = _value
 
@@ -387,8 +386,10 @@ class Reference(BaseField):
 
         :return: None
         """
-        if isinstance(self.ref_class, basestring):
-            self.ref_class = importhelpers.dotted(self.ref_class)
+        if isinstance(self.ref_class, six.string_types):
+            module_path, _, class_name = self.ref_class.rpartition('.')
+            mod = __import__(module_path, fromlist=[class_name])
+            self.ref_class = getattr(mod, class_name)
 
     def validate(self, value):
         """
@@ -568,7 +569,7 @@ class RamlNamedParametersMap(Map):
     RamlNamedParameters.
     """
     def __init__(self, *args, **kwargs):
-        from entities import RamlNamedParameters
+        from .entities import RamlNamedParameters
         key_type = String()
         value_type = Or(
             Reference(RamlNamedParameters),

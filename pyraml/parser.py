@@ -1,17 +1,20 @@
 __author__ = 'ad'
 
+import itertools
 import contextlib
-import urllib2
 import mimetypes
 import os.path
-import urlparse
 import yaml
 from collections import OrderedDict
 
-from raml_elements import ParserRamlInclude
-from entities import (
+from six.moves import urllib_parse as urlparse
+from six.moves import urllib as urllib2
+from six.moves import reduce
+
+from .raml_elements import ParserRamlInclude
+from .entities import (
     RamlRoot, RamlResource, RamlMethod, RamlResourceType)
-from constants import (
+from .constants import (
     RAML_SUPPORTED_FORMAT_VERSION, RAML_CONTENT_MIME_TYPES,
     HTTP_METHODS)
 
@@ -20,7 +23,7 @@ __all__ = ["RamlException", "RamlNotFoundException", "RamlParseException",
            "ParseContext", "load", "parse"]
 
 
-class RamlException(StandardError):
+class RamlException(Exception):
     pass
 
 
@@ -146,7 +149,7 @@ def parse_protocols(ctx, base_uri=None):
     protocols = ctx.get_property_with_schema(
         'protocols', RamlRoot.protocols)
     if protocols is None and base_uri is not None:
-        protocols = [urllib2.splittype(base_uri)[0]]
+        protocols = [base_uri.partition(':')[0]]
     if protocols:
         protocols = [p.upper() for p in protocols]
     return protocols
@@ -300,7 +303,7 @@ def parse_resource_types(ctx):
     if isinstance(resource_types, ParseContext):
         resource_types = resource_types.data
     resource_types = reduce(
-        lambda x, y: dict(x.items() + y.items()),
+        lambda x, y: dict(itertools.chain(x.items(), y.items())),
         resource_types)
 
     resource_types_context = ParseContext(resource_types, ctx.relative_path)
