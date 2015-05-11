@@ -18,23 +18,24 @@ The pyraml package can be installed with ``pip`` or ``easy_install`` from GIT re
 Developing pyraml-paser
 -----------------------
 
-You may need to install package ``nose`` and ``mock`` for running pyraml-parser tests.
+You may need to install ``nose``, ``tox`` and ``mock`` packages to run pyraml-parser tests.
 
 Typical installation process for developing purposes:
 
     $ git clone git@github.com:an2deg/pyraml-parser.git
     $ cd pyraml-parser
-    $ pip install nose mock
+    $ pip install mock
     $ python setup.py develop
-
-To run tests use:
-
-    $ python -m nose
 
 To run tests on all supported python versions:
 
     $ pip install tox
     $ tox
+
+Or to run tests with ``nose``:
+
+    $ pip install nose
+    $ python -m nose
 
 
 Using pyraml-parser
