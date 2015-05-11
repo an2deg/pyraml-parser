@@ -1,9 +1,11 @@
 __author__ = 'ad'
 
-from fields import BaseField
+import six
+
+from .fields import BaseField
 
 
-class ValidationError(StandardError):
+class ValidationError(Exception):
     def __init__(self, validation_errors):
         self.errors = validation_errors
 
@@ -34,7 +36,7 @@ class Schema(type):
 
         # Propagate field name from structure to the field, so we can access
         # RAML field name
-        for field_name, field_obj in _structure.iteritems():
+        for field_name, field_obj in _structure.items():
             if field_obj.field_name is None:
                 field_obj.field_name = field_name
 
@@ -43,6 +45,7 @@ class Schema(type):
         return super(Schema, mcs).__new__(mcs, name, bases, attrs)
 
 
+@six.add_metaclass(Schema)
 class Model(BaseModel):
     """
     Base class for models
@@ -50,18 +53,16 @@ class Model(BaseModel):
     >>> class Thing(Model):
     ...    field1 = String(max_len=100)
     ...    field2 = List(String(max_len=200), required=False)
-    >>> t = Thing(field2=[u"field2 value"])
+    >>> t = Thing(field2=[u'field2 value'])
     >>> t.validate()
     Traceback (most recent call last):
     ...
     ValidationError: { 'field1': 'missed value for required field' }
-    >>> t.field1 = u"field1 value"
+    >>> t.field1 = u'field1 value'
     >>> t.validate()
     >>> t
     { 'field1': 'field1 value', 'field2': [ 'field2 value' ] }
     """
-    __metaclass__ = Schema
-
     def __init__(self, **kwargs):
         super(BaseModel, self).__init__()
 
@@ -86,7 +87,7 @@ class Model(BaseModel):
             try:
                 field_type.validate(getattr(self, field_name))
             except ValueError as e:
-                errors[field_name] = unicode(e)
+                errors[field_name] = six.text_type(e)
         if errors:
             raise ValidationError(errors)
 
@@ -111,7 +112,7 @@ class Model(BaseModel):
                     json_object.get(model_field_name, None))
                 setattr(rv, model_field_name, value)
             except ValueError as e:
-                errors[model_field_name] = unicode(e)
+                errors[model_field_name] = six.text_type(e)
 
         # Look for aliased attributes
         for field_name, field_value in json_object.items():
@@ -122,7 +123,7 @@ class Model(BaseModel):
                             value = field_type.to_python(field_value)
                             setattr(rv, model_field_name, value)
                         except ValueError as e:
-                            errors[model_field_name] = unicode(e)
+                            errors[model_field_name] = six.text_type(e)
         if errors:
             raise ValidationError(errors)
 

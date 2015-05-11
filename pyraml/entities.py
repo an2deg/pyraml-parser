@@ -1,10 +1,10 @@
 __author__ = 'ad'
 
-from model import Model
-from fields import (
+from .model import Model
+from .fields import (
     String, Reference, Map, List, Bool, Int, Float, Or, Null,
     Choice, RamlNamedParametersMap, JSONData, XMLData)
-from constants import NAMED_PARAMETER_TYPES, RAML_VALID_PROTOCOLS
+from .constants import NAMED_PARAMETER_TYPES, RAML_VALID_PROTOCOLS
 
 
 class SecuredEntity(object):

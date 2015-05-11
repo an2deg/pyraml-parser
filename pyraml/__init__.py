@@ -4,8 +4,8 @@ import mimetypes
 import yaml
 from collections import OrderedDict
 
-from raml_elements import ParserRamlInclude
-from constants import RAML_CONTENT_MIME_TYPES
+from .raml_elements import ParserRamlInclude
+from .constants import RAML_CONTENT_MIME_TYPES
 
 
 # Bootstrapping: making able mimetypes package to recognize RAML and YAML

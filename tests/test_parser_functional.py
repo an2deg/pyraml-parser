@@ -6,7 +6,7 @@ from mock import patch
 try:
     from lxml.etree import _Element as XMLElement
 except ImportError:
-    from xml.etree.ElementTree import _Element as XMLElement
+    from xml.etree.ElementTree import Element as XMLElement
 
 class RootParseTestCase(SampleParseTestCase):
     """ Test parsing of:
@@ -90,11 +90,11 @@ class RootParseTestCase(SampleParseTestCase):
             }
         })
         self.assertIsInstance(data.schemas['league-xml'], XMLElement)
-        self.assertListEqual(
-            data.schemas['league-xml'].items(), [
+        self.assertSetEqual(
+            set(data.schemas['league-xml'].items()), set([
                 ('elementFormDefault', 'qualified'),
                 ('targetNamespace', 'http://example.com/schemas/soccer')
-            ])
+            ]))
 
     def test_schemas_not_provided(self):
         data = self.load('null-elements.yaml')
@@ -113,7 +113,7 @@ class RootParseTestCase(SampleParseTestCase):
     def test_secured_by_parsed(self):
         data = self.load('full-config.yaml')
         self.assertEqual(len(data.securedBy), 3)
-        null, oauth2, oauth1 = sorted(data.securedBy)
+        oauth2, oauth1, null = data.securedBy
         self.assertIsNone(null)
         self.assertDictEqual(oauth2, {
             'oauth_2_0': {'scopes': ['foobar']}
@@ -211,7 +211,7 @@ class ResourceParseTestCase(SampleParseTestCase):
         data = self.load('full-config.yaml')
         self.assertEqual(len(data.resources), 3)
         # Order or resources is preserved
-        self.assertListEqual(data.resources.keys(), ['/', '/media', '/tags'])
+        self.assertListEqual(list(data.resources.keys()), ['/', '/media', '/tags'])
         self.assertEqual(data.resources['/'].displayName, 'Root resource')
         self.assertEqual(
             data.resources['/'].description,
@@ -425,7 +425,7 @@ class ResourceParseTestCase(SampleParseTestCase):
         data = self.load('full-config.yaml')
         secured = data.resources['/'].securedBy
         self.assertEqual(len(secured), 3)
-        null, oauth2, oauth1 = sorted(secured)
+        oauth2, oauth1, null = secured
         self.assertIsNone(null)
         self.assertDictEqual(oauth2, {
             'oauth_2_0': {'scopes': ['comments']}
@@ -436,7 +436,7 @@ class ResourceParseTestCase(SampleParseTestCase):
         data = self.load('full-config.yaml')
         secured = data.resources['/'].methods['head'].securedBy
         self.assertEqual(len(secured), 2)
-        oauth2, oauth1 = sorted(secured)
+        oauth2, oauth1 = secured
         self.assertDictEqual(oauth2, {
             'oauth_2_0': {'scopes': ['more comments']}
         })
@@ -496,7 +496,7 @@ class TraitsParseTestCase(SampleParseTestCase):
         data = self.load('full-config.yaml')
         self.assertEqual(len(data.traits), 3)
         self.assertListEqual(
-            data.traits.keys(),
+            list(data.traits.keys()),
             ['simple', 'knotty', 'orderable'])
         self.assertEqual(data.traits['simple'].usage, 'simple trait')
         self.assertIsNone(data.traits['simple'].description)
