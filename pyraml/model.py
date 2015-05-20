@@ -21,9 +21,8 @@ class Schema(type):
     def __new__(mcs, name, bases, attrs):
         # Initialize special `_structure` class attribute which
         # contains info about all model fields'
-        _structure = {
-            _name: _type for _name, _type in
-            attrs.items() if isinstance(_type, BaseField)}
+        _structure = dict((_name, _type) for _name, _type in
+            attrs.items() if isinstance(_type, BaseField))
 
         # Merge structures of parent classes into the structure of new model
         # class
