@@ -131,6 +131,11 @@ class RamlResource(ResourceTypedEntity, TraitedEntity, SecuredEntity, Model):
     uriParameters = RamlNamedParametersMap()
     baseUriParameters = RamlNamedParametersMap()
 
+    def __repr__(self):
+        res = self.__dict__.copy()
+        res.pop('parentResource')  # Avoid Circular reference
+        return res.__repr__()
+
 
 class RamlResourceType(Model):
     """ A resource type is a partial resource definition that,

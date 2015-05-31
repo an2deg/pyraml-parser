@@ -4,8 +4,14 @@ import itertools
 import contextlib
 import mimetypes
 import os.path
+import codecs
 import yaml
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    # For python 2.6 additional package ordereddict should be installed
+    from ordereddict import OrderedDict
+from .constants import RAML_VALID_PROTOCOLS
 
 from six.moves import urllib_parse as urlparse
 from six.moves import urllib as urllib2
@@ -412,7 +418,7 @@ def _is_mime_type_xml(mime_type):
 
 
 def _is_network_resource(uri):
-    return urlparse.urlparse(uri).scheme
+    return urlparse.urlparse(uri).scheme.upper() in RAML_VALID_PROTOCOLS
 
 
 def _build_network_relative_path(url):
@@ -435,7 +441,7 @@ def _calculate_new_relative_path(base, uri):
 def _load_local_file(full_path):
     # include locates at local file system
     if not os.path.exists(full_path):
-        raise RamlNotFoundException("No such file {} found".format(full_path))
+        raise RamlNotFoundException("No such file {0} found".format(full_path))
 
     # Detect file type... we should able to parse raml, yaml, json, xml and read
     # all other content types as plain files
@@ -443,7 +449,7 @@ def _load_local_file(full_path):
     if mime_type is None:
         mime_type = "text/plain"
 
-    with contextlib.closing(open(full_path, 'rU')) as f:
+    with contextlib.closing(codecs.open(full_path, 'r', 'utf-8')) as f:
         return f.read(), mime_type
 
 

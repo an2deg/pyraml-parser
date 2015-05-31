@@ -1,7 +1,6 @@
 __author__ = 'ad'
 
 import six
-
 from .fields import BaseField
 
 

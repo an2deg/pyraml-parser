@@ -14,6 +14,10 @@ The pyraml package can be installed with ``pip`` or ``easy_install`` from GIT re
 
     $ pip install https://github.com/an2deg/pyraml-parser/archive/master.zip
 
+For Python 2.6 packages ``ordereddict`` and 'lxml' should be installed:
+
+    $ pip install ordereddict lxml
+
 
 Developing pyraml-paser
 -----------------------
@@ -37,6 +41,9 @@ Or to run tests with ``nose``:
     $ pip install nose
     $ python -m nose
 
+Or to run tests using ``unittest``:
+
+    $ python setup.py test
 
 Using pyraml-parser
 ===================

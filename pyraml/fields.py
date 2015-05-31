@@ -3,7 +3,11 @@ __author__ = 'ad'
 import six
 import json
 from abc import ABCMeta
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    # For python 2.6 additional package ordereddict should be installed
+    from ordereddict import OrderedDict
 
 try:
     from lxml.etree import fromstring as parse_xml_string
@@ -32,7 +36,7 @@ class BaseField(object):
         """
         if value is None and self.required:
             raise ValueError(
-                "Missed value for the required field: {}".format(
+                "Missed value for the required field: {0}".format(
                     self.field_name))
 
     def from_python(self, value):
@@ -58,7 +62,7 @@ class Null(BaseField):
     def validate(self, value):
         super(Null, self).validate(value)
         if value is not None:
-            raise ValueError('Expected None, got {}'.format(value))
+            raise ValueError('Expected None, got {0}'.format(value))
 
 
 class Choice(BaseField):
@@ -77,8 +81,8 @@ class Choice(BaseField):
         super(Choice, self).validate(value)
         if (value is not None) and (value not in self._choices):
             raise ValueError(
-                "Got an unexpected value in the field `{}`: {}. "
-                "Value should be one of: {}.".format(
+                "Got an unexpected value in the field `{0}`: {1}. "
+                "Value should be one of: {2}.".format(
                     self.field_name, value, self._choices))
 
 
@@ -108,15 +112,15 @@ class String(BaseField):
 
         if not isinstance(value, six.string_types):
             raise ValueError(
-                "{!r} expected to be string but got {}".format(
+                "{0!r} expected to be string but got {1}".format(
                     value, type(value).__name__))
 
         if self._max_len is not None:
             value_len = len(value)
             if value_len > self._max_len:
                 raise ValueError(
-                    "Length of field exceeds maximum allowed: {}."
-                    "Expected max length more than {}".format(
+                    "Length of field exceeds maximum allowed: {0}."
+                    "Expected max length more than {1}".format(
                         value_len, self._max_len))
 
 
@@ -138,7 +142,7 @@ class Bool(BaseField):
         """
         super(Bool, self).validate(value)
         if (value is not None) and not isinstance(value, bool):
-            raise ValueError("{!r} expected to be bool".format(value))
+            raise ValueError("{0!r} expected to be bool".format(value))
 
 
 class Int(BaseField):
@@ -159,7 +163,7 @@ class Int(BaseField):
         """
         super(Int, self).validate(value)
         if (value is not None) and not isinstance(value, six.integer_types):
-            raise ValueError("{!r} expected to be integer".format(value))
+            raise ValueError("{0!r} expected to be integer".format(value))
 
 
 class Float(BaseField):
@@ -181,7 +185,7 @@ class Float(BaseField):
         super(Float, self).validate(value)
         if (value is not None) and not isinstance(value, float):
             raise ValueError(
-                "{!r} expected to be integer but got {}".format(
+                "{0!r} expected to be integer but got {1}".format(
                     value, type(value).__name__))
 
 
@@ -210,7 +214,7 @@ class List(BaseField):
         if not isinstance(element_type, BaseField):
             raise ValueError(
                 "Invalid type of 'element_type': expected to be instance of "
-                "subclass of BaseField but got {!r}".format(element_type))
+                "subclass of BaseField but got {0!r}".format(element_type))
         self._min_len = min_len
         self._max_len = max_len
         self._element_type = element_type
@@ -229,19 +233,19 @@ class List(BaseField):
             return
 
         if not isinstance(value, list):
-            raise ValueError("{!r} expected to be list".format(value))
+            raise ValueError("{0!r} expected to be list".format(value))
 
         value_len = len(value)
         if (self._max_len is not None) and (value_len > self._max_len):
             raise ValueError(
-                "Length of field exceeds maximum allowed: {}. "
-                "Expected value of length not more than {}".format(
+                "Length of field exceeds maximum allowed: {0}. "
+                "Expected value of length not more than {1}".format(
                     value_len, self._max_len))
 
         if (self._min_len is not None) and (value_len < self._min_len):
             raise ValueError(
-                "Length of field is less than minimum allowed: {}."
-                "Expected value of length not less than {}".format(
+                "Length of field is less than minimum allowed: {0}."
+                "Expected value of length not less than {1}".format(
                     value_len, self._max_len))
 
     def to_python(self, value):
@@ -283,11 +287,11 @@ class Map(BaseField):
         if not isinstance(key_type, BaseField):
             raise ValueError(
                 "Invalid type of 'key_type': expected to be instance of "
-                "subclass of BaseField but it is {!r}".format(key_type))
+                "subclass of BaseField but it is {0!r}".format(key_type))
         if not isinstance(value_type, BaseField):
             raise ValueError(
                 "Invalid type of 'value_type': expected to be instance "
-                "of subclass of BaseField but it is {!r}".format(value_type))
+                "of subclass of BaseField but it is {0!r}".format(value_type))
 
         self._value_type = value_type
         self._key_type = key_type
@@ -306,7 +310,7 @@ class Map(BaseField):
             return
 
         if not isinstance(value, dict):
-            raise ValueError("{!r} expected to be dict".format(value))
+            raise ValueError("{0!r} expected to be dict".format(value))
 
         for key, val in value.items():
             self._key_type.to_python(key)
@@ -330,7 +334,7 @@ class Map(BaseField):
                 _value = OrderedDict()
                 for item in value:
                     if not isinstance(item, (dict, OrderedDict)):
-                        raise ValueError("{!r} expected to be dict or list of "
+                        raise ValueError("{0!r} expected to be dict or list of "
                                          "dict".format(value))
 
                     _value.update(
@@ -406,7 +410,7 @@ class Reference(BaseField):
             return
 
         if not isinstance(value, self.ref_class):
-            raise ValueError("{!r} expected to be {} or dict".format(
+            raise ValueError("{0!r} expected to be {1} or dict".format(
                 value, self.ref_class))
 
     def to_python(self, value):
@@ -435,7 +439,7 @@ class Reference(BaseField):
             # Value empty, just instantiate empty `ref_class`
             value = self.ref_class()
         else:
-            raise ValueError("{!r} expected to be {} or dict".format(
+            raise ValueError("{0!r} expected to be {1} or dict".format(
                 value, self.ref_class))
 
         return super(Reference, self).to_python(value)
@@ -470,13 +474,13 @@ class Or(BaseField):
         for field in args:
             if not isinstance(field, BaseField):
                 raise ValueError(
-                    "Invalid argument supplied {!r}: expected list of "
+                    "Invalid argument supplied {0!r}: expected list of "
                     "BaseField instances".format(field))
             self.variants.append(field)
 
         if len(self.variants) < 2:
             raise ValueError(
-                "Required at least 2 variants but got only {}".format(
+                "Required at least 2 variants but got only {0}".format(
                     len(self.variants)))
 
     def validate(self, value):
@@ -500,7 +504,7 @@ class Or(BaseField):
         else:
             # No one of variants doesn't accept `value`
             raise ValueError(
-                "{!r} expected to be one of: {}".format(
+                "{0!r} expected to be one of: {1}".format(
                     value, ",".join([type(f).__name__ for f in self.variants])))
 
     def to_python(self, value):

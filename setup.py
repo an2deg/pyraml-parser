@@ -14,7 +14,7 @@ except IOError:
 
 setup(
     name='pyraml-parser',
-    version='0.1.4',
+    version='0.1.5',
     author='Andrii Degtiarov',
     author_email='andrew.degtiariov@gmail.com',
     packages=['pyraml'],
@@ -25,8 +25,12 @@ setup(
     install_requires=[
         'setuptools',
         'PyYAML>=3.10',
-        'six',
+        'six>=1.9.0',
     ],
+    tests_require=[
+        'mock'
+    ],
+    test_suite='tests',
     zip_safe=True,
     include_package_data=True,
     classifiers=[
