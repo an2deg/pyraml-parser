@@ -43,6 +43,6 @@ class ValidationTestCase(SampleParseTestCase):
 
     def test_invalid_double_title(self):
         args = ('invalid', 'invalid-double-title.yaml')
-        expected = ("root property already used: title")
+        expected = ("Property already used: title")
         self.assertRaisesRegexp(
             ValidationError, expected, self.load, *args)

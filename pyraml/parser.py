@@ -69,9 +69,8 @@ class ParseContext(object):
                 return _included_ctx._handle_load(_included_ctx.data)
             return file_content
         if isinstance(data, dict):
-            for key, val in data.items():
-                data[key] = self._handle_load(val)
-            return data
+            new_data = OrderedDict(((key, self._handle_load(val)) for key, val in data.items()))
+            return new_data
         if isinstance(data, list):
             return [self._handle_load(x) for x in data]
         return data

@@ -2,15 +2,7 @@ __author__ = 'ad'
 
 import six
 from .fields import BaseField
-
-
-class ValidationError(Exception):
-    def __init__(self, validation_errors):
-        self.errors = validation_errors
-
-    def __str__(self):
-        return repr(self.errors)
-
+from . import ValidationError
 
 class BaseModel(object):
     pass
