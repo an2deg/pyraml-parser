@@ -11,6 +11,18 @@ except ImportError:
 from .raml_elements import ParserRamlInclude
 from .constants import RAML_CONTENT_MIME_TYPES
 
+class ValidationError(Exception):
+    def __init__(self, validation_errors):
+        self.errors = validation_errors
+
+    def __str__(self):
+        return repr(self.errors)
+
+class UniqOrderedDict(OrderedDict):
+    def __setitem__(self, key, value):
+        if key in self:
+            raise ValidationError("Property already used: {0}".format(key))
+        super(UniqOrderedDict, self).__setitem__(key, value)
 
 # Bootstrapping: making able mimetypes package to recognize RAML and YAML
 # file types
@@ -33,7 +45,7 @@ def dict_representer(dumper, data):
 
 
 def dict_constructor(loader, node):
-    return OrderedDict(loader.construct_pairs(node))
+    return UniqOrderedDict(loader.construct_pairs(node))
 
 
 yaml.add_representer(OrderedDict, dict_representer)

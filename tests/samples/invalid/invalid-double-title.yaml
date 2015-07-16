@@ -1,0 +1,8 @@
+#%RAML 0.8
+---
+title: Schema with double title entry in YAML
+title: Schema with double title entry in YAML
+version: v1
+baseUri: https://sample.com/api
+/media:
+    get: !!null

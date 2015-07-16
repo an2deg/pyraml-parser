@@ -40,3 +40,9 @@ class ValidationTestCase(SampleParseTestCase):
         self.assertEqual(
             data.schemas['invalid-xml'].strip(),
             '<?xml version="1.0" encoding="ISO-8859-1" ?>')
+
+    def test_invalid_double_title(self):
+        args = ('invalid', 'invalid-double-title.yaml')
+        expected = ("Property already used: title")
+        self.assertRaisesRegexp(
+            ValidationError, expected, self.load, *args)
