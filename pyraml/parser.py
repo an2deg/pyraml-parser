@@ -14,7 +14,7 @@ except ImportError:
 from .constants import RAML_VALID_PROTOCOLS
 
 from six.moves import urllib_parse as urlparse
-from six.moves import urllib as urllib2
+from six.moves import urllib_request as urllib2
 from six.moves import reduce
 
 from .raml_elements import ParserRamlInclude
@@ -425,7 +425,7 @@ def _build_network_relative_path(url):
     parse_result = urlparse.ParseResult(
         p.scheme,
         p.netloc,
-        os.path.dirname(p.path),
+        os.path.dirname(p.path) + '/',
         '', '', '')
     return urlparse.urlunparse(parse_result)
 
@@ -456,5 +456,5 @@ def _load_network_resource(url):
     with contextlib.closing(urllib2.urlopen(url, timeout=60.0)) as f:
         # We fully rely of mime type to remote server b/c according
         # of specs it MUST support RAML mime
-        mime_type = f.headers.gettype()
+        mime_type = f.headers.get('Content-Type')
         return f.read(), mime_type
