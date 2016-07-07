@@ -32,6 +32,7 @@ for mtype in RAML_CONTENT_MIME_TYPES:
 
 # making able mimetypes package to recognize JSON file type
 mimetypes.add_type("application/json", ".json")
+mimetypes.add_type("application/json", ".schema")
 
 # Configure PyYaml to recognize RAML additional constructions
 yaml.add_representer(ParserRamlInclude, ParserRamlInclude.representer)
