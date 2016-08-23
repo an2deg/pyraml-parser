@@ -554,10 +554,10 @@ class EncodedDataBase(BaseField):
 
 class JSONData(EncodedDataBase):
     """ Represents a JSON encoded data. """
-    result_type = dict
+    result_type = OrderedDict
 
     def load_data(self, value):
-        return json.loads(value)
+        return json.loads(value, object_pairs_hook=OrderedDict)
 
 
 class XMLData(EncodedDataBase):
