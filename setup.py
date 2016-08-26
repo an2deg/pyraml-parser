@@ -14,7 +14,7 @@ except IOError:
 
 setup(
     name='pyraml-parser',
-    version='0.1.5',
+    version='0.1.6',
     author='Andrii Degtiarov',
     author_email='andrew.degtiariov@gmail.com',
     packages=['pyraml'],
