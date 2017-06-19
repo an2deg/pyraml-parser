@@ -6,6 +6,7 @@ import mimetypes
 import os.path
 import codecs
 import yaml
+import json
 try:
     from collections import OrderedDict
 except ImportError:
@@ -60,6 +61,13 @@ class ParseContext(object):
         """
         if isinstance(data, ParserRamlInclude):
             file_content, file_type = self._load_resource(data.file_name)
+
+            if _is_mime_type_json(file_type):
+                file_content_dict = {}
+                file_content_dict['fileName'] = data.file_name
+                file_content_dict['content'] = file_content
+                file_content = json.dumps(file_content_dict)
+
             if _is_mime_type_raml(file_type):
                 new_relative_path = _calculate_new_relative_path(
                     self.relative_path, data.file_name)
@@ -260,7 +268,7 @@ def parse_resource(ctx, property_name, parent_object):
     resource.uriParameters = resource_ctx.get_property_with_schema(
         "uriParameters", RamlResource.uriParameters)
     resource.type = resource_ctx.get_property_with_schema(
-        "type", RamlResource.type)
+        RamlResource.type_.field_name, RamlResource.type_)
     resource.is_ = resource_ctx.get_property_with_schema(
         RamlResource.is_.field_name, RamlResource.is_)
     resource.baseUriParameters = resource_ctx.get_property_with_schema(

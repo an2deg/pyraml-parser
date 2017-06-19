@@ -31,9 +31,10 @@ class ResourceTypedEntity(object):
     """ Represents entities that may have resourceTypes
     specified in ``type`` field.
     """
-    type = Or(String(),
-              Map(String(),
-                  Map(String(), String())))
+    type_ = Or(String(),
+               Map(String(),
+                   Map(String(), Or(String(), Int()))),
+               field_name='type')
 
 
 class RamlDocumentation(Model):
@@ -79,7 +80,7 @@ class RamlBody(Model):
     in which the key MUST be a valid media type.
     """
     schema = Or(JSONData(), XMLData(), String())
-    example = String()
+    example = Or(JSONData(), String())
     notNull = Bool()
     formParameters = RamlNamedParametersMap()
 
