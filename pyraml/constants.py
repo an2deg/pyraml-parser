@@ -13,6 +13,10 @@ HTTP_METHODS = set([
     'connect', 'options', 'patch', 'trace',
     'get', 'post', 'put', 'delete', 'head',
 ])
+HTTP_METHODS_OPTIONNAL = set([
+    'connect?', 'options?', 'patch?', 'trace?',
+    'get?', 'post?', 'put?', 'delete?', 'head?',
+])
 NAMED_PARAMETER_TYPES = set([
     'string', 'number', 'integer',
     'date', 'boolean',  'file',
