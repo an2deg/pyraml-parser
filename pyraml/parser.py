@@ -23,7 +23,7 @@ from .entities import (
     RamlRoot, RamlResource, RamlMethod, RamlResourceType)
 from .constants import (
     RAML_SUPPORTED_FORMAT_VERSION, RAML_CONTENT_MIME_TYPES,
-    HTTP_METHODS)
+    HTTP_METHODS, HTTP_METHODS_OPTIONNAL)
 
 
 __all__ = ["RamlException", "RamlNotFoundException", "RamlParseException",
@@ -62,7 +62,8 @@ class ParseContext(object):
         if isinstance(data, ParserRamlInclude):
             file_content, file_type = self._load_resource(data.file_name)
 
-            if _is_mime_type_json(file_type):
+            if not _is_mime_type_raml(file_type):
+
                 file_content_dict = {}
                 file_content_dict['fileName'] = data.file_name
                 file_content_dict['content'] = file_content
@@ -221,17 +222,27 @@ def parse(c, relative_path):
 
 
 def parse_resource_methods(resource_ctx):
-    """ Parse existing HTTP_METHODS from a resource_ctx. """
+    """ Parse existing HTTP_METHODS and HTTP_METHODS_OPTIONNAL from a resource_ctx. """
     methods = OrderedDict()
-    for _http_method in HTTP_METHODS:
-        if _http_method not in resource_ctx:
+    for _http_method_key_item in HTTP_METHODS.union(HTTP_METHODS_OPTIONNAL):
+
+        methodSplit = _http_method_key_item.split("?")
+        _http_method = methodSplit[0]
+        methodIsOptional = False
+        if len(methodSplit) > 1:
+            methodIsOptional = True
+
+        if _http_method_key_item not in resource_ctx:
             continue
-        _method = resource_ctx.get(_http_method)
+        _method = resource_ctx.get(_http_method_key_item)
+
         if _method:
+            _method['isOptional'] = methodIsOptional
             methods[_http_method] = parse_method(
                 ParseContext(_method, resource_ctx.relative_path))
         else:
-            methods[_http_method] = RamlMethod(notNull=True)
+            methods[_http_method] = RamlMethod(notNull=True, isOptional=methodIsOptional)
+
     return methods
 
 
@@ -341,6 +352,33 @@ def parse_resource_types(ctx):
     return resource_types
 
 
+def parse_method_responses(ctx):
+
+    responses = OrderedDict()
+
+    responsesRaw = ctx.get_property_with_schema("responses", RamlMethod.responses)
+
+    if responsesRaw:
+        for responseKeyItem in responsesRaw.keys():
+
+            responseIsOptional = False
+            responseKey = responseKeyItem
+            if isinstance(responseKeyItem, str):
+
+                # Extract optional flag
+                responseKeySplit = responseKeyItem.split("?")
+                responseKey = responseKeySplit[0]
+
+                if len(responseKeySplit) > 1:
+                    responseIsOptional = True
+
+            # Fill clean response
+            responses[responseKey] = responsesRaw[responseKeyItem]
+            responses[responseKey].isOptional = responseIsOptional
+
+        return responses
+
+
 def parse_method(ctx):
     """ Parse RAML resource method.
 
@@ -367,14 +405,20 @@ def parse_method(ctx):
         "headers", RamlMethod.headers)
     method.protocols = ctx.get_property_with_schema(
         "protocols", RamlMethod.protocols)
-    method.responses = ctx.get_property_with_schema(
-        "responses", RamlMethod.responses)
     method.is_ = ctx.get_property_with_schema(
         RamlMethod.is_.field_name, RamlMethod.is_)
     method.queryParameters = ctx.get_property_with_schema(
         "queryParameters", RamlMethod.queryParameters)
     method.securedBy = ctx.get_property_with_schema(
         'securedBy', RamlMethod.securedBy)
+    method.isOptional = ctx.get_property_with_schema(
+        'isOptional', RamlMethod.isOptional)
+
+    # Parse responses
+    responses = parse_method_responses(ctx)
+    if responses:
+        method.responses = responses
+
     return method
 
 
@@ -421,7 +465,7 @@ def _is_mime_type_json(mime_type):
 
 
 def _is_mime_type_xml(mime_type):
-    return mime_type.lower() == "application/xml"
+    return mime_type.lower() in ["application/xml", "text/xml"]
 
 
 def _is_network_resource(uri):

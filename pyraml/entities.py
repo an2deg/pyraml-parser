@@ -23,7 +23,7 @@ class TraitedEntity(object):
     is_ = List(
         Or(String(),
            Map(String(),
-               Map(String(), String()))),
+               Map(String(), Or(String(), Int())))),
         field_name='is')
 
 
@@ -94,6 +94,7 @@ class RamlResponse(Model):
     description = String()
     headers = RamlNamedParametersMap()
     body = Map(String(), Reference("pyraml.entities.RamlBody"))
+    isOptional = Bool()
 
 
 class RamlTrait(Model):
@@ -105,7 +106,7 @@ class RamlTrait(Model):
     description = String()
     headers = RamlNamedParametersMap()
     queryParameters = RamlNamedParametersMap()
-    responses = Map(Int(), Reference(RamlResponse))
+    responses = Map(Or(String(),Int()), Reference(RamlResponse))
 
 
 class RamlMethod(TraitedEntity, SecuredEntity, Model):
@@ -113,13 +114,14 @@ class RamlMethod(TraitedEntity, SecuredEntity, Model):
     notNull = Bool()
     description = String()
     body = Map(String(), Reference(RamlBody))
-    responses = Map(Int(), Reference(RamlResponse))
+    responses = Map(Or(String(), Int()), Reference(RamlResponse))
     queryParameters = RamlNamedParametersMap()
     baseUriParameters = RamlNamedParametersMap()
     headers = RamlNamedParametersMap()
     protocols = List(Choice(
         field_name='protocols',
         choices=RAML_VALID_PROTOCOLS))
+    isOptional = Bool()
 
 
 class RamlResource(ResourceTypedEntity, TraitedEntity, SecuredEntity, Model):
@@ -158,7 +160,7 @@ class RamlSecuritySchemeDescription(Model):
     body = Map(String(), Reference(RamlBody))
     headers = RamlNamedParametersMap()
     queryParameters = RamlNamedParametersMap()
-    responses = Map(Int(), Reference(RamlResponse))
+    responses = Map(Or(String(), Int()), Reference(RamlResponse))
     baseUriParameters = RamlNamedParametersMap()
     protocols = List(Choice(
         field_name='protocols',
