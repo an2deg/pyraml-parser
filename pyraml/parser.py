@@ -365,7 +365,7 @@ def parse_method_responses(ctx):
             responseKey = responseKeyItem
             if isinstance(responseKeyItem, str):
 
-                # Extract optional flag
+                # Extract optional flag
                 responseKeySplit = responseKeyItem.split("?")
                 responseKey = responseKeySplit[0]
 
