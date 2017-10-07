@@ -5,7 +5,7 @@ import contextlib
 import mimetypes
 import os.path
 import codecs
-import yaml
+import imp
 import json
 try:
     from collections import OrderedDict
@@ -28,6 +28,7 @@ from .constants import (
 
 __all__ = ["RamlException", "RamlNotFoundException", "RamlParseException",
            "ParseContext", "load", "parse"]
+yaml = imp.load_module('pyraml_yaml', *imp.find_module('yaml'))
 
 
 class RamlException(Exception):

@@ -1,6 +1,9 @@
 __author__ = 'ad'
 
-import yaml
+import imp
+
+
+yaml = imp.load_module('pyraml_yaml', *imp.find_module('yaml'))
 
 
 class ParserRamlInclude(yaml.YAMLObject):
