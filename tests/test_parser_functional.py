@@ -8,6 +8,13 @@ try:
 except ImportError:
     from xml.etree.ElementTree import Element as XMLElement
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    # For python 2.6 additional package ordereddict should be installed
+    from ordereddict import OrderedDict
+
+
 class RootParseTestCase(SampleParseTestCase):
     """ Test parsing of:
 
@@ -332,7 +339,7 @@ class ResourceParseTestCase(SampleParseTestCase):
             "required": False,
             "type": "object"
         })
-        self.assertEqual(appjson.example, '{ "input": "hola" }')
+        self.assertEqual(appjson.example, OrderedDict([(u'input', u'hola')]))
         self.assertIsNone(appjson.formParameters)
 
     def test_method_body_xml_parsed(self):
@@ -387,7 +394,7 @@ class ResourceParseTestCase(SampleParseTestCase):
         self.assertEqual(len(responses[200].body), 1)
         self.assertEqual(
             responses[200].body['application/json'].example,
-            '{ "key": "value" }')
+            OrderedDict([(u'key', u'value')]))
         self.assertEqual(
             responses[200].body['application/json'].schema,
             'league-json')
@@ -482,7 +489,7 @@ class ResourceTypesParseTestCase(SampleParseTestCase):
         self.assertEqual(len(post.responses), 1)
         resp200 = post.responses[200]
         self.assertEqual(resp200.body['application/json'].example,
-                         '{ "message": "Foo" }')
+                         OrderedDict([(u'message', u'Foo')]))
 
 
 class TraitsParseTestCase(SampleParseTestCase):
@@ -536,7 +543,7 @@ class TraitsParseTestCase(SampleParseTestCase):
         resp200 = data.traits['orderable'].responses[200]
         self.assertEqual(len(resp200.body), 1)
         self.assertEqual(resp200.body['application/json'].example,
-                         '{ "message": "Bar" }')
+                         OrderedDict([(u'message', u'Bar')]))
 
 
 class SecuritySchemesParseTestCase(SampleParseTestCase):
@@ -601,7 +608,7 @@ class SecuritySchemesParseTestCase(SampleParseTestCase):
         self.assertEqual(len(body), 2)
         appjson = body['application/json']
         self.assertDictEqual(appjson.schema, {"foo": "bar"})
-        self.assertEqual(appjson.example, '{ "input": "hola" }')
+        self.assertEqual(appjson.example, OrderedDict([(u'input', u'hola')]))
         self.assertIsNone(appjson.formParameters)
         xmlbody = body['text/xml']
         self.assertIsInstance(xmlbody.schema, XMLElement)
@@ -627,7 +634,7 @@ class SecuritySchemesParseTestCase(SampleParseTestCase):
         self.assertEqual(resp401.description, 'Bad or expired token')
         self.assertEqual(len(resp401.body), 1)
         self.assertEqual(resp401.body['application/json'].example,
-                         '{ "message": "fail" }')
+                         OrderedDict([(u'message', u'fail')]))
         self.assertIsNone(resp401.body['application/json'].schema)
 
     def test_describedby_not_provided(self):
