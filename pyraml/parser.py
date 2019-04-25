@@ -62,13 +62,6 @@ class ParseContext(object):
         if isinstance(data, ParserRamlInclude):
             file_content, file_type = self._load_resource(data.file_name)
 
-            if not _is_mime_type_raml(file_type):
-
-                file_content_dict = {}
-                file_content_dict['fileName'] = data.file_name
-                file_content_dict['content'] = file_content
-                file_content = json.dumps(file_content_dict)
-
             if _is_mime_type_raml(file_type):
                 new_relative_path = _calculate_new_relative_path(
                     self.relative_path, data.file_name)
