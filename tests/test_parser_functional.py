@@ -208,7 +208,7 @@ class InclusionTestCase(SampleParseTestCase):
         data = self.load('include-body-example-json.yaml')
         responses = data.resources['/me'].methods['get'].responses[200]
         json_response = responses.body['application/json']
-        self.assertEqual(json_response.example, '{"foo": "bar"}')
+        self.assertEqual(json_response.example, {u'foo': u'bar'})
 
 
 class ResourceParseTestCase(SampleParseTestCase):
