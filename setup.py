@@ -24,7 +24,7 @@ setup(
     long_description=README + '\n\n' + CHANGES,
     install_requires=[
         'setuptools',
-        'PyYAML>=3.10',
+        'PyYAML==3.13',
         'six>=1.9.0',
     ],
     tests_require=[
