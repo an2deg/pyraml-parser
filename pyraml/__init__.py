@@ -1,7 +1,7 @@
 __author__ = 'ad'
 
 import mimetypes
-import yaml
+import imp
 try:
     from collections import OrderedDict
 except ImportError:
@@ -10,6 +10,10 @@ except ImportError:
 
 from .raml_elements import ParserRamlInclude
 from .constants import RAML_CONTENT_MIME_TYPES
+
+
+yaml = imp.load_module('pyraml_yaml', *imp.find_module('yaml'))
+
 
 class ValidationError(Exception):
     def __init__(self, validation_errors):
