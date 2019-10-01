@@ -66,7 +66,7 @@ class ParseContext(object):
                 new_relative_path = _calculate_new_relative_path(
                     self.relative_path, data.file_name)
                 _included_ctx = ParseContext(
-                    yaml.load(file_content),
+                    yaml.safe_load(file_content),
                     new_relative_path)
                 return _included_ctx._handle_load(_included_ctx.data)
             return file_content
@@ -175,7 +175,7 @@ def parse(c, relative_path):
     first_line, c = c.split('\n', 1)
     raml_version = _validate_raml_header(first_line)
 
-    context = ParseContext(yaml.load(c), relative_path)
+    context = ParseContext(yaml.safe_load(c), relative_path)
     context.preload_included_resources()
 
     root = RamlRoot(raml_version=raml_version)
