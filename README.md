@@ -1,5 +1,9 @@
 pyraml-parser - Python parser to RAML, the RESTful API Modeling Language.
 
+Warning!
+============
+❗ This project is not maintained anymore!
+Please consider to fork project.
 
 Introduction
 ============
